@@ -79,7 +79,8 @@ static void keyCallback(GLFWwindow*, int, int, int, int);
 
 // Subdivision Functions
 void subdivide(void);
-void resetSubdivision(void);
+void initSubIndicies(void);
+void initSubdivisions(void);
 
 // Bezier Functions
 void bezierCurve(void);
@@ -104,11 +105,11 @@ GLuint programID;
 GLuint pickingProgramID;
 
 // ATTN: INCREASE THIS NUMBER AS YOU CREATE NEW OBJECTS
-const GLuint NumObjects = 1;	// number of different "objects" to be drawn
-GLuint VertexArrayId[NumObjects] = { 0 };
-GLuint VertexBufferId[NumObjects] = { 0 };
-GLuint IndexBufferId[NumObjects] = { 0 };
-size_t NumVert[NumObjects] = { 0 };
+const GLuint NumObjects = 6;	// number of different "objects" to be drawn
+GLuint VertexArrayId[NumObjects] = { 0, 1, 2, 3, 4, 5 };
+GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5 };
+GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5 };
+size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5 };
 
 GLuint MatrixID;
 GLuint ViewMatrixID;
@@ -121,18 +122,19 @@ GLuint LightID;
 // Define objects
 Vertex Vertices[] =
 {
-	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 0
-	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 1
-	{ { 0.5f, 1.75f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 2
-	{ { -0.5f, 1.75f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 3
-	{ { 1.0f, 0.5f, 2.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 4
-	{ { -1.0f, 0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 5
-	{ { 1.0f, -0.5f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 6
-	{ { -0.5f, -1.75f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 7 
-	{ { -1.0f, -0.5f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 8
-	{ { 0.5f, -1.75f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
+	{ { 1.0f, 0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 0
+	{ { 0.5f, 1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 1
+	{ { -0.5f, 1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 2
+	{ { -1.0f, 0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 3
+	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 4
+	{ { 1.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 5
+	{ { 0.5f, -1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 6
+	{ { -0.5f, -1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 7 
+	{ { -1.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 8
+	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
 };
 
+// Index 0-9
 unsigned short Indices[] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 };
@@ -140,21 +142,54 @@ unsigned short Indices[] = {
 const size_t IndexCount = sizeof(Indices) / sizeof(unsigned short);
 // ATTN: DON'T FORGET TO INCREASE THE ARRAY SIZE IN THE PICKING VERTEX SHADER WHEN YOU ADD MORE PICKING COLORS
 
-// Verts 0-8
+// Verts 0-9
 float pickingColor[IndexCount] = { 0 / 255.0f, 1 / 255.0f, 2 / 255.0f, 3 / 255.0f,
 									4 / 255.0f, 5 / 255.0f, 6 / 255.0f, 7 / 255.0f,
 									8 / 255.0f, 9 / 255.0f };
 
 // ATTN: ADD YOU PER-OBJECT GLOBAL ARRAY DEFINITIONS HERE
 
-// Subdivisions Vector
-std::vector<Vertex> subdivisions((2 * IndexCount) + 1);
+// Subdivisions
+int kCount = 0;
+unsigned short nCPoints = IndexCount;
+int kMax = 5;
+
+// Subdivision Indicies
+std::vector<unsigned short> subIndicies;
+
+// Subdivisions
+std::vector<Vertex*> subdivisions; // A vector of vertex arrays
+
+float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f };
+
+// Setup the indicies for the subdivisions
+void initSubIndicies() {
+	for (int i = 0; i < kMax; i++) {
+		if (i == 0) {
+			subIndicies.push_back (nCPoints * 2);
+		}
+		else {
+			subIndicies.push_back (2 * subIndicies.at(i - 1));
+		}
+		printf("subIndicies(%d): %d\n", i, subIndicies.at(i));
+	}
+}
+
+// Declare the size of the subdivisions that we are going to need
+void initSubdivisions() {
+	subdivisions.resize(kMax);
+	for (int i = 0; i < kMax; i++) {
+		subdivisions.at(i) = new Vertex[subIndicies.at(i)]; // @ each index is a vetex array of correct size
+	}
+}
 
 void createObjects(void)
 {
 	// ATTN: DERIVE YOUR NEW OBJECTS HERE:
-	// each has one vertices {pos;color} and one indices array (no picking needed here)
+	// each has one vertices {pos;color} and one indices array (no picking needed here
+	
 }
+
 
 void drawScene(void)
 {
@@ -179,13 +214,50 @@ void drawScene(void)
 		glEnable(GL_PROGRAM_POINT_SIZE);
 
 		glBindVertexArray(VertexArrayId[0]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[0]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);				// update buffer data
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices), Vertices);				// update buffer data
+		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glDrawElements(GL_POINTS, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+
 		// ATTN: OTHER BINDING AND DRAWING COMMANDS GO HERE, one set per object:
-		//glBindVertexArray(VertexArrayId[<x>]); etc etc
+		glBindVertexArray(VertexArrayId[1]);	// draw Vertices
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(0)), &subdivisions.at(0));
+		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
+
+		glBindVertexArray(VertexArrayId[2]);	// draw Vertices
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(1)), &subdivisions.at(1));
+		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
+
+		glBindVertexArray(VertexArrayId[3]);	// draw Vertices
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(2)), &subdivisions.at(2));
+		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
+
+		glBindVertexArray(VertexArrayId[4]);	// draw Vertices
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(3)), &subdivisions.at(3));
+		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
+
+		glBindVertexArray(VertexArrayId[5]);	// draw Vertices
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(4)), &subdivisions.at(4));
+		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+		glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
+
+		// Binding All VAOs
 		glBindVertexArray(0);
+		glBindVertexArray(1);
+		glBindVertexArray(2);
+		glBindVertexArray(3);
+		glBindVertexArray(4);
+		glBindVertexArray(5);
+
 	}
 	glUseProgram(0);
 	// Draw GUI
@@ -361,9 +433,13 @@ void initOpenGL(void)
 
 	createVAOs(Vertices, Indices, sizeof(Vertices), sizeof(Indices), 0);
 	createObjects();
-
 	// ATTN: create VAOs for each of the newly created objects here:
 	// createVAOs(<fill this appropriately>);
+	createVAOs(subdivisions.at(0), &subIndicies.at(0), sizeof(subdivisions.at(0)), sizeof(subIndicies.at(0)), 1);
+	createVAOs(subdivisions.at(1), &subIndicies.at(1), sizeof(subdivisions.at(1)), sizeof(subIndicies.at(1)), 2);
+	createVAOs(subdivisions.at(2), &subIndicies.at(2), sizeof(subdivisions.at(2)), sizeof(subIndicies.at(2)), 3);
+	createVAOs(subdivisions.at(3), &subIndicies.at(3), sizeof(subdivisions.at(3)), sizeof(subIndicies.at(3)), 4);
+	createVAOs(subdivisions.at(4), &subIndicies.at(4), sizeof(subdivisions.at(4)), sizeof(subIndicies.at(4)), 5);
 
 }
 
@@ -453,25 +529,70 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 	}
 }
 
-static int kCount = 0;
-static int nCPoints = IndexCount;
 void subdivide() {
 	if (++kCount % 6){
 		printf("\nK value: %d\n", kCount); // Current K Level
-		nCPoints = (nCPoints * 2) + 1; // Next nCPoints count = 2nCPoints+1
-		printf("nCPoints value: %d\n", nCPoints); // Current # of CPoints for the K Level
+		// Apply next subdivision layer
+
+		// Values for the coords & keeping position
+		float xCoord;
+		float yCoord;
+		int k;
+		int j;
+
+		for (int i = 0; i < nCPoints; i++) {
+			k = i - 1;
+			j = i + 1;
+
+			if (i == 0) {
+				k = nCPoints - 1;
+			}
+			if (i == nCPoints) {
+				j = 0;
+			}
+
+			if (kCount == 1) {
+				if (i % 2) {
+					xCoord = (Vertices[k].XYZW[0] + (6 * Vertices[i].XYZW[0]) + Vertices[j].XYZW[0]);
+					yCoord = (Vertices[k].XYZW[1] + (6 * Vertices[i].XYZW[1]) + Vertices[j].XYZW[1]);
+					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[0] = xCoord;
+					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[1] = yCoord;
+					subdivisions.at(kCount - 1)[(i * 2) + 1].SetColor(subdivideColor);
+				}
+				else {
+					xCoord = ((4 * Vertices[k].XYZW[0]) + (4 * Vertices[i].XYZW[0])) / 8;
+					yCoord = ((4 * Vertices[k].XYZW[1]) + (4 * Vertices[i].XYZW[1])) / 8;
+					subdivisions.at(kCount - 1)[i * 2].XYZW[0] = xCoord;
+					subdivisions.at(kCount - 1)[i * 2].XYZW[1] = yCoord;
+					subdivisions.at(kCount - 1)[i * 2].SetColor(subdivideColor);
+				}
+			}
+			else {
+				if (i % 2) {
+					xCoord = (subdivisions.at(kCount - 2)[k].XYZW[0] + (6 * subdivisions.at(kCount - 2)[i].XYZW[0]) + subdivisions.at(kCount - 2)[j].XYZW[0]);
+					yCoord = (subdivisions.at(kCount - 2)[k].XYZW[1] + (6 * subdivisions.at(kCount - 2)[i].XYZW[1]) + subdivisions.at(kCount - 2)[j].XYZW[1]);
+					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[0] = xCoord;
+					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[1] = yCoord;
+					subdivisions.at(kCount - 1)[(i * 2) + 1].SetColor(subdivideColor);
+				} else {
+					xCoord = ((4 * subdivisions.at(kCount - 2)[k].XYZW[0]) + (4 * subdivisions.at(kCount - 2)[i].XYZW[0])) / 8;
+					yCoord = ((4 * subdivisions.at(kCount - 2)[k].XYZW[1]) + (4 * subdivisions.at(kCount - 2)[i].XYZW[1])) / 8;
+					subdivisions.at(kCount - 1)[i * 2].XYZW[0] = xCoord;
+					subdivisions.at(kCount - 1)[i * 2].XYZW[1] = yCoord;
+					subdivisions.at(kCount - 1)[i * 2].SetColor(subdivideColor);
+				}
+			}
+			printf("Value of subdivisions.at(%d)[%d]: %f, %f (X, Y)\n", kCount - 1, i * 2, xCoord, yCoord);
+			printf("nCPoints value: %d\n", nCPoints); // Current # of CPoints for the K Level
+		}
 	}
 	else {
 		kCount = 0;
 		printf("\nReseting K count\n");
 		nCPoints = IndexCount;
+		// Reset Subdivision Layer to 0
 		printf("\nnCPoints value reset to %d", nCPoints);
-		resetSubdivision();
 	}
-}
-
-void resetSubdivision() {
-
 }
 
 void bezierCurve() {}
@@ -484,6 +605,10 @@ int main(void)
 	int errorCode = initWindow();
 	if (errorCode != 0)
 		return errorCode;
+
+	// Setup Subdivision
+	initSubIndicies();
+	initSubdivisions();
 
 	// initialize OpenGL pipeline
 	initOpenGL();
