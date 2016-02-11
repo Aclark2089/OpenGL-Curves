@@ -220,35 +220,47 @@ void drawScene(void)
 		glDrawElements(GL_POINTS, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 
 		// ATTN: OTHER BINDING AND DRAWING COMMANDS GO HERE, one set per object:
-		glBindVertexArray(VertexArrayId[1]);	// draw Vertices
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(0)), &subdivisions.at(0));
-		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-		glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
+		switch (kCount) {
+		case 5:
 
-		glBindVertexArray(VertexArrayId[2]);	// draw Vertices
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(1)), &subdivisions.at(1));
-		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-		glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
+			glBindVertexArray(VertexArrayId[5]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(4)), &subdivisions.at(4));
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
 
-		glBindVertexArray(VertexArrayId[3]);	// draw Vertices
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(2)), &subdivisions.at(2));
-		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-		glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
+		case 4:
 
-		glBindVertexArray(VertexArrayId[4]);	// draw Vertices
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(3)), &subdivisions.at(3));
-		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-		glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
+			glBindVertexArray(VertexArrayId[4]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(3)), &subdivisions.at(3));
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
 
-		glBindVertexArray(VertexArrayId[5]);	// draw Vertices
-		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(4)), &subdivisions.at(4));
-		//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-		glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
+		case 3:
+
+			glBindVertexArray(VertexArrayId[3]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(2)), &subdivisions.at(2));
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
+
+		case 2:
+
+			glBindVertexArray(VertexArrayId[2]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(1)), &subdivisions.at(1));
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
+
+		case 1:
+
+			glBindVertexArray(VertexArrayId[1]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivisions.at(0)), &subdivisions.at(0));
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
+		}
 
 		// Binding All VAOs
 		glBindVertexArray(0);
@@ -540,7 +552,7 @@ void subdivide() {
 		int k;
 		int j;
 
-		for (int i = 0; i < nCPoints; i++) {
+		for (int i = 0; i < (kCount == 1) ? nCPoints : subIndicies.at(kCount-1); i++) {
 			k = i - 1;
 			j = i + 1;
 
@@ -551,10 +563,9 @@ void subdivide() {
 				j = 0;
 			}
 
-			if (kCount == 1) {
 				if (i % 2) {
-					xCoord = (Vertices[k].XYZW[0] + (6 * Vertices[i].XYZW[0]) + Vertices[j].XYZW[0]);
-					yCoord = (Vertices[k].XYZW[1] + (6 * Vertices[i].XYZW[1]) + Vertices[j].XYZW[1]);
+					xCoord = (Vertices[k].XYZW[0] + (6 * Vertices[i].XYZW[0]) + Vertices[j].XYZW[0]) / 8;
+					yCoord = (Vertices[k].XYZW[1] + (6 * Vertices[i].XYZW[1]) + Vertices[j].XYZW[1]) / 8;
 					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[0] = xCoord;
 					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[1] = yCoord;
 					subdivisions.at(kCount - 1)[(i * 2) + 1].SetColor(subdivideColor);
@@ -566,22 +577,7 @@ void subdivide() {
 					subdivisions.at(kCount - 1)[i * 2].XYZW[1] = yCoord;
 					subdivisions.at(kCount - 1)[i * 2].SetColor(subdivideColor);
 				}
-			}
-			else {
-				if (i % 2) {
-					xCoord = (subdivisions.at(kCount - 2)[k].XYZW[0] + (6 * subdivisions.at(kCount - 2)[i].XYZW[0]) + subdivisions.at(kCount - 2)[j].XYZW[0]);
-					yCoord = (subdivisions.at(kCount - 2)[k].XYZW[1] + (6 * subdivisions.at(kCount - 2)[i].XYZW[1]) + subdivisions.at(kCount - 2)[j].XYZW[1]);
-					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[0] = xCoord;
-					subdivisions.at(kCount - 1)[(i * 2) + 1].XYZW[1] = yCoord;
-					subdivisions.at(kCount - 1)[(i * 2) + 1].SetColor(subdivideColor);
-				} else {
-					xCoord = ((4 * subdivisions.at(kCount - 2)[k].XYZW[0]) + (4 * subdivisions.at(kCount - 2)[i].XYZW[0])) / 8;
-					yCoord = ((4 * subdivisions.at(kCount - 2)[k].XYZW[1]) + (4 * subdivisions.at(kCount - 2)[i].XYZW[1])) / 8;
-					subdivisions.at(kCount - 1)[i * 2].XYZW[0] = xCoord;
-					subdivisions.at(kCount - 1)[i * 2].XYZW[1] = yCoord;
-					subdivisions.at(kCount - 1)[i * 2].SetColor(subdivideColor);
-				}
-			}
+			
 			printf("Value of subdivisions.at(%d)[%d]: %f, %f (X, Y)\n", kCount - 1, i * 2, xCoord, yCoord);
 			printf("nCPoints value: %d\n", nCPoints); // Current # of CPoints for the K Level
 		}
