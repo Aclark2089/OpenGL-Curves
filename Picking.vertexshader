@@ -1,0 +1,22 @@
+#version 330 core
+
+// Input vertex data, different for all executions of this shader.
+layout(location = 0) in vec4 vertexPosition_modelspace;
+
+out vec4 vs_vertexColor;
+
+// Values that stay constant for the whole mesh.
+uniform float PickingColorArray[8];		// picking ID mark (one per vertex/point)
+uniform mat4 MVP;
+
+void main(){
+	gl_PointSize = 5.0;
+
+	vs_vertexColor = vec4(PickingColorArray[gl_VertexID], 0.0, 0.0, 1.0);	// set color based on the ID mark
+
+	// Output position of the vertex, in clip space : MVP * position
+	gl_Position = MVP * vertexPosition_modelspace;
+
+}
+
+
