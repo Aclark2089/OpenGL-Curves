@@ -91,6 +91,7 @@ void cRomCurve(void);
 // GLOBAL VARIABLES
 GLFWwindow* window;
 const GLuint window_width = 1024, window_height = 768;
+int lastkey;
 
 // Window Title
 char* windowTitle = "R. Alex Clark (6416-3663)";
@@ -134,19 +135,20 @@ Vertex Vertices[] =
 	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
 };
 
-Vertex Vertices2[] =
-{
-	{ { 1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 0
-	{ { 0.5f, 1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 1
-	{ { -0.5f, 1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 2
-	{ { -1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 3
-	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 4
-	{ { 1.0f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 5
-	{ { 0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 6
-	{ { -0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 7 
-	{ { -1.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 8
-	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
-};
+
+//Vertex Vertices2[] =
+//{
+//	{ { 1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 0
+//	{ { 0.5f, 1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 1
+//	{ { -0.5f, 1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 2
+//	{ { -1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 3
+//	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 4
+//	{ { 1.0f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 5
+//	{ { 0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 6
+//	{ { -0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 7 
+//	{ { -1.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 8
+//	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
+//};
 
 // Index 0-9
 unsigned short Indices[] = {
@@ -205,10 +207,7 @@ void initSubIndexCounts() {
 
 }
 
-void createObjects(void)
-{
-	// ATTN: DERIVE YOUR NEW OBJECTS HERE:
-	// each has one vertices {pos;color} and one indices array (no picking needed here
+void initSubIndicies() {
 	for (int i = 0; i < 20; i++) {
 		subIndicies1[i] = i;
 	}
@@ -224,6 +223,37 @@ void createObjects(void)
 	for (int i = 0; i < 320; i++) {
 		subIndicies5[i] = i;
 	}
+}
+
+void createObjects(void)
+{
+	// ATTN: DERIVE YOUR NEW OBJECTS HERE:
+	// each has one vertices {pos;color} and one indices array (no picking needed here
+	glfwSetKeyCallback(window, keyCallback);
+
+	if (lastkey == 1) {
+		subdivide();
+
+		switch (kCount) {
+		case 5:
+			createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
+			break;
+		case 4:
+			createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
+			break;
+		case 3:
+			createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
+			break;
+		case 2:
+			createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
+			break;
+		case 1:
+			createVAOs(subdivision1, subIndicies1, sizeof(subdivision1), sizeof(subIndicies1), 1);
+			break;
+		
+		}
+	}
+	
 	
 }
 
@@ -257,55 +287,60 @@ void drawScene(void)
 		glDrawElements(GL_POINTS, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 
 		// ATTN: OTHER BINDING AND DRAWING COMMANDS GO HERE, one set per object:
-		switch (kCount) {
-		case 5:
 
-			glBindVertexArray(VertexArrayId[5]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision5), subdivision5);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
+		if (lastkey == 1)
+		{
 
-		case 4:
 
-			glBindVertexArray(VertexArrayId[4]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision4), subdivision4);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
+			switch (kCount) {
+				case 5:
 
-		case 3:
+					glBindVertexArray(VertexArrayId[5]);	// draw Vertices
+					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
+					glBufferSubData(GL_ARRAY_BUFFER, 5, sizeof(subdivision5), subdivision5);
+					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+					glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
+					break;
 
-			glBindVertexArray(VertexArrayId[3]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision3), subdivision3);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
+					case 4:
 
-		case 2:
+					glBindVertexArray(VertexArrayId[4]);	// draw Vertices
+					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
+					glBufferSubData(GL_ARRAY_BUFFER, 4, sizeof(subdivision4), subdivision4);
+					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+					glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
+					break;
 
-			glBindVertexArray(VertexArrayId[2]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision2), subdivision2);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
+					case 3:
 
-		case 1:
+					glBindVertexArray(VertexArrayId[3]);	// draw Vertices
+					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
+					glBufferSubData(GL_ARRAY_BUFFER, 3, sizeof(subdivision3), subdivision3);
+					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+					glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
+					break;
 
-			glBindVertexArray(VertexArrayId[1]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices2), Vertices2);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
+					case 2:
+
+					glBindVertexArray(VertexArrayId[2]);	// draw Vertices
+					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
+					glBufferSubData(GL_ARRAY_BUFFER, 2, sizeof(subdivision2), subdivision2);
+					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+					glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
+					break;
+
+					case 1:
+
+					glBindVertexArray(VertexArrayId[1]);	// draw Vertices
+					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
+					glBufferSubData(GL_ARRAY_BUFFER, 1, sizeof(subdivision1), subdivision1);
+					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+					glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
+					break;
+			}
 		}
-
 		// Binding All VAOs
 		glBindVertexArray(0);
-		glBindVertexArray(1);
-		glBindVertexArray(2);
-		glBindVertexArray(3);
-		glBindVertexArray(4);
-		glBindVertexArray(5);
 
 	}
 	glUseProgram(0);
@@ -436,7 +471,6 @@ int initWindow(void)
 
 	// Register Callback Functions
 	glfwSetMouseButtonCallback(window, mouseCallback);
-	glfwSetKeyCallback(window, keyCallback);
 
 	return 0;
 }
@@ -484,11 +518,7 @@ void initOpenGL(void)
 	createObjects();
 	// ATTN: create VAOs for each of the newly created objects here:
 	// createVAOs(<fill this appropriately>);
-	createVAOs(Vertices2, Indices, sizeof(Vertices2), sizeof(Indices), 1);
-	createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
-	createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
-	createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
-	createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
+
 	
 
 }
@@ -558,20 +588,24 @@ static void mouseCallback(GLFWwindow* window, int button, int action, int mods)
 	}
 }
 
+
 static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_RELEASE)
 	switch (key) {
 		case GLFW_KEY_1:
 			printf("\nKey 1 Was Released\n");
-			//subdivide();
+			lastkey = 1;
+			kCount++;
 			break;
 		case GLFW_KEY_2:
 			printf("\nKey 2 Was Released\n");
+			lastkey = 2;
 			//bezierCurve();
 			break;
 		case GLFW_KEY_3:
 			printf("\nKey 3 Was Released\n");
+			lastkey = 3;
 			//cRomCurve();
 			break;
 		default:
@@ -580,7 +614,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 void subdivide() {
-	if (++kCount % 6){
+	if (kCount % 6){
 		printf("\nK value: %d\n", kCount); // Current K Level
 		// Apply next subdivision layer
 
@@ -631,6 +665,8 @@ void subdivide() {
 					yCoord = (lastSubdivision[k].XYZW[1] + (6 * lastSubdivision[i].XYZW[1]) + lastSubdivision[j].XYZW[1]) / 8;
 					thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord;
 					thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord;
+					thisSubdivision[(i * 2) + 1].XYZW[3] = 1.0f;
+					thisSubdivision[(i * 2) + 1].RGBA[0] = 0.0f;
 					thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
 					thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
 					thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
@@ -640,9 +676,11 @@ void subdivide() {
 					yCoord = ((4 * lastSubdivision[k].XYZW[1]) + (4 * lastSubdivision[i].XYZW[1])) / 8;
 					thisSubdivision[i * 2].XYZW[0] = xCoord;
 					thisSubdivision[i * 2].XYZW[1] = yCoord;
-					thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
-					thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
-					thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
+					thisSubdivision[i * 2].XYZW[3] = 1.0f;
+					thisSubdivision[i * 2].RGBA[0] = 0.0f;
+					thisSubdivision[i * 2].RGBA[1] = 1.0f;
+					thisSubdivision[i * 2].RGBA[2] = 1.0f;
+					thisSubdivision[i * 2].RGBA[3] = 1.0f;
 
 					printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, (i * 2) + 1, xCoord, yCoord);
 		}
@@ -669,6 +707,7 @@ int main(void)
 
 	// Setup Subdivision
 	initSubIndexCounts();
+	initSubIndicies();
 
 	// initialize OpenGL pipeline
 	initOpenGL();
