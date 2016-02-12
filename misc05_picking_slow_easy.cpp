@@ -81,7 +81,7 @@ static void keyCallback(GLFWwindow*, int, int, int, int);
 void subdivide(void);
 void initSubIndicies(void);
 void initSubIndexCounts(void);
-void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision);
+void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int level);
 
 // Bezier Functions
 void bezierCurve(void);
@@ -611,27 +611,27 @@ void subdivide() {
 
 		lastSubdivision = Vertices;
 		thisSubdivision = subdivision1;
-		calculateSubdivision(thisSubdivision, lastSubdivision);
+		calculateSubdivision(thisSubdivision, lastSubdivision, 1);
 
 		if (kCount > 1) {
 			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision2;
-			calculateSubdivision(thisSubdivision, lastSubdivision);
+			calculateSubdivision(thisSubdivision, lastSubdivision, 2);
 		}
 		if (kCount > 2) {
 			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision3;
-			calculateSubdivision(thisSubdivision, lastSubdivision);
+			calculateSubdivision(thisSubdivision, lastSubdivision, 3);
 		}
 		if (kCount > 3) {
 			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision4;
-			calculateSubdivision(thisSubdivision, lastSubdivision);
+			calculateSubdivision(thisSubdivision, lastSubdivision, 4);
 		}
 		if (kCount > 4) {
 			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision5;
-			calculateSubdivision(thisSubdivision, lastSubdivision);
+			calculateSubdivision(thisSubdivision, lastSubdivision, 5);
 		}
 		
 	}
@@ -643,14 +643,14 @@ void subdivide() {
 	}
 }
 
-void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision) {
+void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int level) {
 
 	// Values for the coords & keeping position
 	float xCoord; // X Coord For The Vertex
 	float yCoord; // Y Coord For The Vertex
 	int k; // Previous level (i - 1)
 	int j; // Next level (i + 1)
-	int numVerts = subIndexCounts.at(kCount - 1); // Number of verts in the last subdivision
+	int numVerts = subIndexCounts.at(level-1); // Number of verts in the last subdivision
 
 	for (int i = 0; i < numVerts; i++) {
 		k = i - 1;
