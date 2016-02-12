@@ -81,6 +81,7 @@ static void keyCallback(GLFWwindow*, int, int, int, int);
 void subdivide(void);
 void initSubIndicies(void);
 void initSubIndexCounts(void);
+void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision);
 
 // Bezier Functions
 void bezierCurve(void);
@@ -233,26 +234,13 @@ void createObjects(void)
 
 	if (lastkey == 1) {
 		subdivide();
-
-		switch (kCount) {
-		case 5:
-			createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
-			break;
-		case 4:
-			createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
-			break;
-		case 3:
-			createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
-			break;
-		case 2:
-			createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
-			break;
-		case 1:
-			createVAOs(subdivision1, subIndicies1, sizeof(subdivision1), sizeof(subIndicies1), 1);
-			break;
-		
-		}
 	}
+
+	createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
+	createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
+	createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
+	createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
+	createVAOs(subdivision1, subIndicies1, sizeof(subdivision1), sizeof(subIndicies1), 1);
 	
 	
 }
@@ -618,73 +606,34 @@ void subdivide() {
 		printf("\nK value: %d\n", kCount); // Current K Level
 		// Apply next subdivision layer
 
-		// Values for the coords & keeping position
-		float xCoord; // X Coord For The Vertex
-		float yCoord; // Y Coord For The Vertex
-		int k; // Previous level (i - 1)
-		int j; // Next level (i + 1)
-		int numVerts = subIndexCounts.at(kCount-1); // Number of verts in the last subdivision
 		Vertex* thisSubdivision;
 		Vertex* lastSubdivision;
 
-		switch (kCount) {
-		case 1:
-			thisSubdivision = subdivision1;
-			lastSubdivision = Vertices;
-			break;
-		case 2:
+		lastSubdivision = Vertices;
+		thisSubdivision = subdivision1;
+		calculateSubdivision(thisSubdivision, lastSubdivision);
+
+		if (kCount > 1) {
+			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision2;
-			lastSubdivision = subdivision1;
-			break;
-		case 3:
+			calculateSubdivision(thisSubdivision, lastSubdivision);
+		}
+		if (kCount > 2) {
+			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision3;
-			lastSubdivision = subdivision2;
-			break;
-		case 4:
+			calculateSubdivision(thisSubdivision, lastSubdivision);
+		}
+		if (kCount > 3) {
+			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision4;
-			lastSubdivision = subdivision3;
-			break;
-		case 5:
+			calculateSubdivision(thisSubdivision, lastSubdivision);
+		}
+		if (kCount > 4) {
+			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision5;
-			lastSubdivision = subdivision4;
-			break;
+			calculateSubdivision(thisSubdivision, lastSubdivision);
 		}
-
-		for (int i = 0; i < numVerts; i++) {
-			k = i - 1;
-			j = i + 1;
-
-			if (i == 0) {
-				k = numVerts - 1;
-			}
-			if (i == numVerts - 1) {
-				j = 0;
-			}
-
-					xCoord = (lastSubdivision[k].XYZW[0] + (6 * lastSubdivision[i].XYZW[0]) + lastSubdivision[j].XYZW[0]) / 8;
-					yCoord = (lastSubdivision[k].XYZW[1] + (6 * lastSubdivision[i].XYZW[1]) + lastSubdivision[j].XYZW[1]) / 8;
-					thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord;
-					thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord;
-					thisSubdivision[(i * 2) + 1].XYZW[3] = 1.0f;
-					thisSubdivision[(i * 2) + 1].RGBA[0] = 0.0f;
-					thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
-					thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
-					thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
-
-					printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, i * 2, xCoord, yCoord);
-					xCoord = ((4 * lastSubdivision[k].XYZW[0]) + (4 * lastSubdivision[i].XYZW[0])) / 8;
-					yCoord = ((4 * lastSubdivision[k].XYZW[1]) + (4 * lastSubdivision[i].XYZW[1])) / 8;
-					thisSubdivision[i * 2].XYZW[0] = xCoord;
-					thisSubdivision[i * 2].XYZW[1] = yCoord;
-					thisSubdivision[i * 2].XYZW[3] = 1.0f;
-					thisSubdivision[i * 2].RGBA[0] = 0.0f;
-					thisSubdivision[i * 2].RGBA[1] = 1.0f;
-					thisSubdivision[i * 2].RGBA[2] = 1.0f;
-					thisSubdivision[i * 2].RGBA[3] = 1.0f;
-
-					printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, (i * 2) + 1, xCoord, yCoord);
-		}
-		printf("There were %d points in the previous subdiv level\n", numVerts); // Current # of CPoints for the K Level
+		
 	}
 	else {
 		kCount = 0;
@@ -692,6 +641,53 @@ void subdivide() {
 		// Reset Subdivision Layer to 0
 		printf("\nnCPoints value reset to %d\n", subIndexCounts.at(0));
 	}
+}
+
+void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision) {
+
+	// Values for the coords & keeping position
+	float xCoord; // X Coord For The Vertex
+	float yCoord; // Y Coord For The Vertex
+	int k; // Previous level (i - 1)
+	int j; // Next level (i + 1)
+	int numVerts = subIndexCounts.at(kCount - 1); // Number of verts in the last subdivision
+
+	for (int i = 0; i < numVerts; i++) {
+		k = i - 1;
+		j = i + 1;
+
+		if (i == 0) {
+			k = numVerts - 1;
+		}
+		if (i == numVerts - 1) {
+			j = 0;
+		}
+
+		xCoord = (lastSubdivision[k].XYZW[0] + (6 * lastSubdivision[i].XYZW[0]) + lastSubdivision[j].XYZW[0]) / 8;
+		yCoord = (lastSubdivision[k].XYZW[1] + (6 * lastSubdivision[i].XYZW[1]) + lastSubdivision[j].XYZW[1]) / 8;
+		thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord;
+		thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord;
+		thisSubdivision[(i * 2) + 1].XYZW[3] = 1.0f;
+		thisSubdivision[(i * 2) + 1].RGBA[0] = 0.0f;
+		thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
+		thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
+		thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
+
+		printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, i * 2, xCoord, yCoord);
+		xCoord = ((4 * lastSubdivision[k].XYZW[0]) + (4 * lastSubdivision[i].XYZW[0])) / 8;
+		yCoord = ((4 * lastSubdivision[k].XYZW[1]) + (4 * lastSubdivision[i].XYZW[1])) / 8;
+		thisSubdivision[i * 2].XYZW[0] = xCoord;
+		thisSubdivision[i * 2].XYZW[1] = yCoord;
+		thisSubdivision[i * 2].XYZW[3] = 1.0f;
+		thisSubdivision[i * 2].RGBA[0] = 0.0f;
+		thisSubdivision[i * 2].RGBA[1] = 1.0f;
+		thisSubdivision[i * 2].RGBA[2] = 1.0f;
+		thisSubdivision[i * 2].RGBA[3] = 1.0f;
+
+		printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, (i * 2) + 1, xCoord, yCoord);
+	}
+	printf("There were %d points in the previous subdiv level\n", numVerts); // Current # of CPoints for the K Level
+
 }
 
 void bezierCurve() {}
