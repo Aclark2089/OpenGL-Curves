@@ -81,8 +81,6 @@ static void keyCallback(GLFWwindow*, int, int, int, int);
 void subdivide(void);
 void initSubIndicies(void);
 void initSubIndexCounts(void);
-void initSubdivisions(void);
-void freeSubdivisions(void);
 
 // Bezier Functions
 void bezierCurve(void);
@@ -136,6 +134,20 @@ Vertex Vertices[] =
 	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
 };
 
+Vertex Vertices2[] =
+{
+	{ { 1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 0
+	{ { 0.5f, 1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 1
+	{ { -0.5f, 1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 2
+	{ { -1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 3
+	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 4
+	{ { 1.0f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 5
+	{ { 0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 6
+	{ { -0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 7 
+	{ { -1.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 8
+	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
+};
+
 // Index 0-9
 unsigned short Indices[] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -156,10 +168,22 @@ int kCount = 0; // Level of Subdivision, level 0 == no subdivision
 unsigned short nCPoints = IndexCount; // Size of the original Verticies
 int kMax = 6; // Max # 5 subdivisions & original the Verticies level
 
+unsigned short subIndicies1[20];
+unsigned short subIndicies2[40];
+unsigned short subIndicies3[80];
+unsigned short subIndicies4[160];
+unsigned short subIndicies5[320];
+
+Vertex subdivision1[20];
+Vertex subdivision2[40];
+Vertex subdivision3[80];
+Vertex subdivision4[160];
+Vertex subdivision5[320];
+
+
+
 // Subdivision Indicies & Their Counts
-std::vector<unsigned short*> subIndicies; // A vector of indicies
 std::vector<int> subIndexCounts; // A vector of sizes for the indicies / subdivision verticies
-std::vector<Vertex*> subdivisions; // A vector of vertex arrays
 
 float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Cyan Color for subdiv pts
 
@@ -181,66 +205,25 @@ void initSubIndexCounts() {
 
 }
 
-// Declare the subdivision indicies as arrays of unsigned shorts
-void initSubIndicies() {
-	subIndicies.resize(kMax);
-	for (int i = 0; i < kMax; i++) { // From 0 to kMax subdivisions (including size of original @ (0))
-		subIndicies.at(i) = new unsigned short[subIndexCounts.at(i)]; // Indicies Size @ i = Size @ (i - 1) * 2
-		printf("subIndicies.at(%d) set to unsigned short[%d]\n", i, subIndexCounts.at(i)); // Log
-	}
-
-	printf("\nIndex Arrays Initialized\n");
-	//getchar();
-
-	for (int i = 0; i < kMax; i++) {
-		for (int j = 0; j < subIndexCounts.at(i); j++) {
-			subIndicies.at(i)[j] = j; // The subindicies arrays from 0 to their size are set with [0, 1...N-1]
-			printf("subIndicies.at(%d)[%d] = %d\n", i, j, j);
-		}
-	}
-
-	printf("\nIndex Arrays Setup\n");
-	getchar();
-
-}
-
-// Declare the size of the subdivisions that we are going to need as arrays of verticies
-void initSubdivisions() {
-	subdivisions.resize(kMax);
-	for (int i = 0; i < kMax; i++) {
-		subdivisions.at(i) = new Vertex[subIndexCounts.at(i)]; // @ each index is a vetex array of correct size
-		printf("subdivisions.at(%d) : Vertex[%d]\n", i, subIndexCounts.at(i)); // Log
-	}
-
-	Vertex* verticiesArray = subdivisions.at(0);
-	for (int i = 0; i < subIndexCounts.at(0); i++) {
-		verticiesArray[i] = Vertices[i];
-		printf("subdivisions.at(0) set to Vertex[%d] with value XPOS = %f, YPOS %f\n", i, subdivisions.at(0)[i].XYZW[0], subdivisions.at(0)[i].XYZW[1]); // Log
-	}
-
-	printf("\Subdivisions Completed\n");
-	//getchar();
-
-}
-
-void freeSubdivisions() {
-	// subIndicies arrays
-	for (int i = 0; i < kMax; i++) {
-		free(subIndicies.at(i));
-	}
-
-	// subdivisions
-	for (int i = 0; i < kMax; i++) {
-		for (int j = 0; j <= subIndexCounts.at(i); j++) {
-			free(subdivisions.at(i));
-		}
-	}
-}
-
 void createObjects(void)
 {
 	// ATTN: DERIVE YOUR NEW OBJECTS HERE:
 	// each has one vertices {pos;color} and one indices array (no picking needed here
+	for (int i = 0; i < 20; i++) {
+		subIndicies1[i] = i;
+	}
+	for (int i = 0; i < 40; i++) {
+		subIndicies2[i] = i;
+	}
+	for (int i = 0; i < 80; i++) {
+		subIndicies3[i] = i;
+	}
+	for (int i = 0; i < 160; i++) {
+		subIndicies4[i] = i;
+	}
+	for (int i = 0; i < 320; i++) {
+		subIndicies5[i] = i;
+	}
 	
 }
 
@@ -279,7 +262,7 @@ void drawScene(void)
 
 			glBindVertexArray(VertexArrayId[5]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * subIndexCounts.at(5), subdivisions.at(5));
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision5), subdivision5);
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
 
@@ -287,7 +270,7 @@ void drawScene(void)
 
 			glBindVertexArray(VertexArrayId[4]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * subIndexCounts.at(4), subdivisions.at(4));
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision4), subdivision4);
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
 
@@ -295,7 +278,7 @@ void drawScene(void)
 
 			glBindVertexArray(VertexArrayId[3]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * subIndexCounts.at(3), subdivisions.at(3));
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision3), subdivision3);
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
 
@@ -303,7 +286,7 @@ void drawScene(void)
 
 			glBindVertexArray(VertexArrayId[2]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * subIndexCounts.at(2), subdivisions.at(2));
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision2), subdivision2);
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
 
@@ -311,7 +294,7 @@ void drawScene(void)
 
 			glBindVertexArray(VertexArrayId[1]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * subIndexCounts.at(1), subdivisions.at(1));
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertices2), Vertices2);
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
 		}
@@ -501,16 +484,11 @@ void initOpenGL(void)
 	createObjects();
 	// ATTN: create VAOs for each of the newly created objects here:
 	// createVAOs(<fill this appropriately>);
-	createVAOs(subdivisions.at(1), subIndicies.at(1), sizeof(Vertex) * subIndexCounts.at(1), sizeof(unsigned short) * subIndexCounts.at(1), 1);
-	createVAOs(subdivisions.at(2), subIndicies.at(2), sizeof(Vertex) * subIndexCounts.at(2), sizeof(unsigned short) * subIndexCounts.at(2), 2);
-	createVAOs(subdivisions.at(3), subIndicies.at(3), sizeof(Vertex) * subIndexCounts.at(3), sizeof(unsigned short) * subIndexCounts.at(3), 3);
-	createVAOs(subdivisions.at(4), subIndicies.at(4), sizeof(Vertex) * subIndexCounts.at(4), sizeof(unsigned short) * subIndexCounts.at(4), 4);
-	createVAOs(subdivisions.at(5), subIndicies.at(5), sizeof(Vertex) * subIndexCounts.at(5), sizeof(unsigned short) * subIndexCounts.at(5), 5);
-
-	for (int i = 0; i < kMax; i++) {
-		printf("sizeof subdivisions.at(%d) = %d\n", i, sizeof(subdivisions.at(i)));
-	}
-	getchar();
+	createVAOs(Vertices2, Indices, sizeof(Vertices2), sizeof(Indices), 1);
+	createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
+	createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
+	createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
+	createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
 	
 
 }
@@ -569,10 +547,6 @@ void cleanup(void)
 	glDeleteProgram(programID);
 	glDeleteProgram(pickingProgramID);
 
-
-	// Clean subdivisions
-	freeSubdivisions();
-
 	// Close OpenGL window and terminate GLFW
 	glfwTerminate();
 }
@@ -590,7 +564,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 	switch (key) {
 		case GLFW_KEY_1:
 			printf("\nKey 1 Was Released\n");
-			subdivide();
+			//subdivide();
 			break;
 		case GLFW_KEY_2:
 			printf("\nKey 2 Was Released\n");
@@ -616,8 +590,31 @@ void subdivide() {
 		int k; // Previous level (i - 1)
 		int j; // Next level (i + 1)
 		int numVerts = subIndexCounts.at(kCount-1); // Number of verts in the last subdivision
-		Vertex* thisSubdivision = subdivisions.at(kCount);
-		Vertex* lastSubdivision = subdivisions.at(kCount - 1);
+		Vertex* thisSubdivision;
+		Vertex* lastSubdivision;
+
+		switch (kCount) {
+		case 1:
+			thisSubdivision = subdivision1;
+			lastSubdivision = Vertices;
+			break;
+		case 2:
+			thisSubdivision = subdivision2;
+			lastSubdivision = subdivision1;
+			break;
+		case 3:
+			thisSubdivision = subdivision3;
+			lastSubdivision = subdivision2;
+			break;
+		case 4:
+			thisSubdivision = subdivision4;
+			lastSubdivision = subdivision3;
+			break;
+		case 5:
+			thisSubdivision = subdivision5;
+			lastSubdivision = subdivision4;
+			break;
+		}
 
 		for (int i = 0; i < numVerts; i++) {
 			k = i - 1;
@@ -634,15 +631,20 @@ void subdivide() {
 					yCoord = (lastSubdivision[k].XYZW[1] + (6 * lastSubdivision[i].XYZW[1]) + lastSubdivision[j].XYZW[1]) / 8;
 					thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord;
 					thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord;
-					thisSubdivision[(i * 2) + 1].SetColor(subdivideColor);
+					thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
+					thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
+					thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
 
-					printf("Value of subdivisions.at(%d)[%d]: %f, %f (X, Y)\n", kCount, i * 2, xCoord, yCoord);
+					printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, i * 2, xCoord, yCoord);
 					xCoord = ((4 * lastSubdivision[k].XYZW[0]) + (4 * lastSubdivision[i].XYZW[0])) / 8;
 					yCoord = ((4 * lastSubdivision[k].XYZW[1]) + (4 * lastSubdivision[i].XYZW[1])) / 8;
 					thisSubdivision[i * 2].XYZW[0] = xCoord;
 					thisSubdivision[i * 2].XYZW[1] = yCoord;
-					thisSubdivision[i * 2].SetColor(subdivideColor);
-					printf("Value of subdivisions.at(%d)[%d]: %f, %f (X, Y)\n", kCount, (i * 2) + 1, xCoord, yCoord);
+					thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
+					thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
+					thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
+
+					printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, (i * 2) + 1, xCoord, yCoord);
 		}
 		printf("There were %d points in the previous subdiv level\n", numVerts); // Current # of CPoints for the K Level
 	}
@@ -650,7 +652,7 @@ void subdivide() {
 		kCount = 0;
 		printf("\nReseting K count\n");
 		// Reset Subdivision Layer to 0
-		printf("\nnCPoints value reset to %d", subIndexCounts.at(0));
+		printf("\nnCPoints value reset to %d\n", subIndexCounts.at(0));
 	}
 }
 
@@ -667,8 +669,6 @@ int main(void)
 
 	// Setup Subdivision
 	initSubIndexCounts();
-	initSubIndicies();
-	initSubdivisions();
 
 	// initialize OpenGL pipeline
 	initOpenGL();
@@ -694,7 +694,7 @@ int main(void)
 		// Subdividing verticies on user key press of 1
 
 		// DRAWING SCENE
-		createObjects();	// re-evaluate curves in case vertices have been moved
+		createObjects(); // re-evaluate curves in case vertices have been moved
 		drawScene();
 
 
