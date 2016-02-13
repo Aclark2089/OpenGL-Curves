@@ -684,7 +684,7 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int 
 		thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord; // X
 		thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord; // Y
 		thisSubdivision[(i * 2) + 1].XYZW[3] = 1.0f; // W
-		thisSubdivision[i * 2].SetColor(subdivideColor); // Subdivision Color Set
+		thisSubdivision[(i * 2) + 1].SetColor(subdivideColor); // Subdivision Color Set
 
 		// P[2i+1]
 		xCoord = ((4 * lastSubdivision[k].XYZW[0]) + (4 * lastSubdivision[i].XYZW[0])) / 8;
