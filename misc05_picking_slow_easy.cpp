@@ -138,6 +138,9 @@ Vertex Vertices[] =
 	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
 };
 
+// Ptr to Verticies
+Vertex* verticiesPtr = Vertices;
+
 // Index 0-9
 unsigned short Indices[] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -171,6 +174,13 @@ Vertex subdivision2[40];
 Vertex subdivision3[80];
 Vertex subdivision4[160];
 Vertex subdivision5[320];
+
+// ptrs to subdivisions
+Vertex* subdivision1Ptr = subdivision1;
+Vertex* subdivision2Ptr = subdivision2;
+Vertex* subdivision3Ptr = subdivision3;
+Vertex* subdivision4Ptr = subdivision4;
+Vertex* subdivision5Ptr = subdivision5;
 
 // Subdivision Counts
 std::vector<int> subIndexCounts; // A vector of sizes for the indicies / subdivision verticies
@@ -614,34 +624,20 @@ void subdivide() {
 		printf("\nK value: %d\n", kCount); // Current K Level
 #endif
 
-		// Apply next subdivision layer
-		Vertex* thisSubdivision; // Ptr to current level of subdiv
-		Vertex* lastSubdivision; // Ptr to previous level of subdiv
-
-		lastSubdivision = Vertices; // Start with verticies
-		thisSubdivision = subdivision1; // Apply level 1 always
-		calculateSubdivision(thisSubdivision, lastSubdivision, 1); // Calculate the subdiv of level 1
+		calculateSubdivision(subdivision1Ptr, verticiesPtr, 1); // Calculate the subdiv of level 1
 
 		// For each level of k past 1 we need to work our way down and calculate each subsequent level of subdiv
 		if (kCount > 1) { 
-			lastSubdivision = thisSubdivision;
-			thisSubdivision = subdivision2;
-			calculateSubdivision(thisSubdivision, lastSubdivision, 2);
+			calculateSubdivision(subdivision2Ptr, subdivision1Ptr, 2);
 		}
 		if (kCount > 2) {
-			lastSubdivision = thisSubdivision;
-			thisSubdivision = subdivision3;
-			calculateSubdivision(thisSubdivision, lastSubdivision, 3);
+			calculateSubdivision(subdivision3Ptr, subdivision2Ptr, 3);
 		}
 		if (kCount > 3) {
-			lastSubdivision = thisSubdivision;
-			thisSubdivision = subdivision4;
-			calculateSubdivision(thisSubdivision, lastSubdivision, 4);
+			calculateSubdivision(subdivision4Ptr, subdivision3Ptr, 4);
 		}
 		if (kCount > 4) {
-			lastSubdivision = thisSubdivision;
-			thisSubdivision = subdivision5;
-			calculateSubdivision(thisSubdivision, lastSubdivision, 5);
+			calculateSubdivision(subdivision5Ptr, subdivision4Ptr, 5);
 		}
 		
 	}
