@@ -23,7 +23,7 @@ using namespace glm;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 
-#define DEBUG 1
+//#define DEBUG 1
 
 typedef struct Vertex {
 	float XYZW[4];
@@ -223,18 +223,18 @@ void createObjects(void)
 {
 	// ATTN: DERIVE YOUR NEW OBJECTS HERE:
 	// each has one vertices {pos;color} and one indices array (no picking needed here
-	glfwSetKeyCallback(window, keyCallback);
+	
 
 	if (lastkey == 1) {
 		subdivide();
 	}
 
+	// Subdivision VAOs
 	createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
 	createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
 	createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
 	createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
 	createVAOs(subdivision1, subIndicies1, sizeof(subdivision1), sizeof(subIndicies1), 1);
-	
 	
 }
 
@@ -278,43 +278,43 @@ void drawScene(void)
 
 					glBindVertexArray(VertexArrayId[5]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
-					glBufferSubData(GL_ARRAY_BUFFER, 5, sizeof(subdivision5), subdivision5);
+					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision5), subdivision5);
 					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
-					case 4:
+				case 4:
 
 					glBindVertexArray(VertexArrayId[4]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
-					glBufferSubData(GL_ARRAY_BUFFER, 4, sizeof(subdivision4), subdivision4);
+					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision4), subdivision4);
 					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
-					case 3:
+				case 3:
 
 					glBindVertexArray(VertexArrayId[3]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
-					glBufferSubData(GL_ARRAY_BUFFER, 3, sizeof(subdivision3), subdivision3);
+					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision3), subdivision3);
 					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
-					case 2:
+				case 2:
 
 					glBindVertexArray(VertexArrayId[2]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
-					glBufferSubData(GL_ARRAY_BUFFER, 2, sizeof(subdivision2), subdivision2);
+					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision2), subdivision2);
 					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
-					case 1:
+				case 1:
 
 					glBindVertexArray(VertexArrayId[1]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
-					glBufferSubData(GL_ARRAY_BUFFER, 1, sizeof(subdivision1), subdivision1);
+					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision1), subdivision1);
 					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
 					break;
@@ -452,6 +452,7 @@ int initWindow(void)
 
 	// Register Callback Functions
 	glfwSetMouseButtonCallback(window, mouseCallback);
+	glfwSetKeyCallback(window, keyCallback);
 
 	return 0;
 }
@@ -495,12 +496,11 @@ void initOpenGL(void)
 	// Get a handle for our "LightPosition" uniform
 	LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
+	// Vertex VAO
 	createVAOs(Vertices, Indices, sizeof(Vertices), sizeof(Indices), 0);
-	createObjects();
-	// ATTN: create VAOs for each of the newly created objects here:
-	// createVAOs(<fill this appropriately>);
 
-	
+	// Setup Objects
+	createObjects();
 
 }
 
