@@ -175,7 +175,10 @@ Vertex subdivision5[320];
 // Subdivision Counts
 std::vector<int> subIndexCounts; // A vector of sizes for the indicies / subdivision verticies
 
+// Vertex Colors
 float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Cyan Color for subdiv pts
+float bezierColor[] = { 1.0f, 1.0f, 0.0f, 1.0f }; // Yellow Color for bezier verticies
+float catColor[] = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red Color for catmull-rom verticies
 
 // Setup the indicies for the subdivisions
 void initSubIndexCounts() {
