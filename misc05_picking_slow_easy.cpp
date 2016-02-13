@@ -23,6 +23,8 @@ using namespace glm;
 #include <common/objloader.hpp>
 #include <common/vboindexer.hpp>
 
+#define DEBUG 1
+
 typedef struct Vertex {
 	float XYZW[4];
 	float RGBA[4];
@@ -136,21 +138,6 @@ Vertex Vertices[] =
 	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
 };
 
-
-//Vertex Vertices2[] =
-//{
-//	{ { 1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 0
-//	{ { 0.5f, 1.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 1
-//	{ { -0.5f, 1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 2
-//	{ { -1.0f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 3
-//	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 4
-//	{ { 1.0f, -0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 5
-//	{ { 0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 6
-//	{ { -0.5f, -1.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } }, // 7 
-//	{ { -1.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 8
-//	{ { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } }, // 9 
-//};
-
 // Index 0-9
 unsigned short Indices[] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -171,21 +158,21 @@ int kCount = 0; // Level of Subdivision, level 0 == no subdivision
 unsigned short nCPoints = IndexCount; // Size of the original Verticies
 int kMax = 6; // Max # 5 subdivisions & original the Verticies level
 
+// subdivision indicies
 unsigned short subIndicies1[20];
 unsigned short subIndicies2[40];
 unsigned short subIndicies3[80];
 unsigned short subIndicies4[160];
 unsigned short subIndicies5[320];
 
+// subdivisions vertex arrays
 Vertex subdivision1[20];
 Vertex subdivision2[40];
 Vertex subdivision3[80];
 Vertex subdivision4[160];
 Vertex subdivision5[320];
 
-
-
-// Subdivision Indicies & Their Counts
+// Subdivision Counts
 std::vector<int> subIndexCounts; // A vector of sizes for the indicies / subdivision verticies
 
 float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Cyan Color for subdiv pts
@@ -200,11 +187,17 @@ void initSubIndexCounts() {
 		else {
 			subIndexCounts.at(i) = (2 * subIndexCounts.at(i - 1)); // Else Vertex Size @ i = Size @ (i - 1) * 2
 		}
+
+#ifdef DEBUG
 		printf("subIndexCounts(%d): %d\n", i, subIndexCounts.at(i)); // Log
+#endif
+
 	}
-	
+
+#ifdef DEBUG
 	printf("\nIndex Counts Completed\n");
-	//getchar();
+	getchar();
+#endif
 
 }
 
@@ -579,41 +572,55 @@ static void mouseCallback(GLFWwindow* window, int button, int action, int mods)
 
 static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (action == GLFW_RELEASE)
-	switch (key) {
+	if (action == GLFW_RELEASE) {
+		std::string str = "";
+		switch (key) {
 		case GLFW_KEY_1:
-			printf("\nKey 1 Was Released\n");
+			str = "\nKey 1 Was Released\n";
 			lastkey = 1;
 			kCount++;
 			break;
 		case GLFW_KEY_2:
-			printf("\nKey 2 Was Released\n");
+			str = "\nKey 2 Was Released\n";
 			lastkey = 2;
+			kCount = 0;
 			//bezierCurve();
 			break;
 		case GLFW_KEY_3:
-			printf("\nKey 3 Was Released\n");
+			str = "\nKey 3 Was Released\n";
 			lastkey = 3;
+			kCount = 0;
 			//cRomCurve();
 			break;
 		default:
-			printf("\nKey pressed\n");
+			str = "\nKey pressed\n";
+		}
+
+#ifdef DEBUG
+		printf("%s", str);
+#endif
+
 	}
 }
 
 void subdivide() {
-	if (kCount % 6){
+
+	if (kCount % 6) { // If current kCount is not 0 or has just moved past 5
+
+#ifdef DEBUG
 		printf("\nK value: %d\n", kCount); // Current K Level
+#endif
+
 		// Apply next subdivision layer
+		Vertex* thisSubdivision; // Ptr to current level of subdiv
+		Vertex* lastSubdivision; // Ptr to previous level of subdiv
 
-		Vertex* thisSubdivision;
-		Vertex* lastSubdivision;
+		lastSubdivision = Vertices; // Start with verticies
+		thisSubdivision = subdivision1; // Apply level 1 always
+		calculateSubdivision(thisSubdivision, lastSubdivision, 1); // Calculate the subdiv of level 1
 
-		lastSubdivision = Vertices;
-		thisSubdivision = subdivision1;
-		calculateSubdivision(thisSubdivision, lastSubdivision, 1);
-
-		if (kCount > 1) {
+		// For each level of k past 1 we need to work our way down and calculate each subsequent level of subdiv
+		if (kCount > 1) { 
 			lastSubdivision = thisSubdivision;
 			thisSubdivision = subdivision2;
 			calculateSubdivision(thisSubdivision, lastSubdivision, 2);
@@ -636,10 +643,13 @@ void subdivide() {
 		
 	}
 	else {
-		kCount = 0;
-		printf("\nReseting K count\n");
+
 		// Reset Subdivision Layer to 0
+		kCount = 0;
+#ifdef DEBUG
+		printf("\nReseting K count\n");
 		printf("\nnCPoints value reset to %d\n", subIndexCounts.at(0));
+#endif
 	}
 }
 
@@ -650,43 +660,50 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int 
 	float yCoord; // Y Coord For The Vertex
 	int k; // Previous level (i - 1)
 	int j; // Next level (i + 1)
-	int numVerts = subIndexCounts.at(level-1); // Number of verts in the last subdivision
+	int numVerts = subIndexCounts.at(level-1); // Number of verts in the last subdivision level
 
+	// Loop through arrays and set thisSubdivision based on the values of the indicies of lastSubdivision
 	for (int i = 0; i < numVerts; i++) {
+
+		// k = previous index, j = next index
 		k = i - 1;
 		j = i + 1;
 
+		// If i == 0, k has to be the last index of the previous subdiv
 		if (i == 0) {
 			k = numVerts - 1;
 		}
+		// If i == end of the last subdiv, j = the first index of the last subdiv
 		if (i == numVerts - 1) {
 			j = 0;
 		}
 
+		// P[2i]
 		xCoord = (lastSubdivision[k].XYZW[0] + (6 * lastSubdivision[i].XYZW[0]) + lastSubdivision[j].XYZW[0]) / 8;
 		yCoord = (lastSubdivision[k].XYZW[1] + (6 * lastSubdivision[i].XYZW[1]) + lastSubdivision[j].XYZW[1]) / 8;
-		thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord;
-		thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord;
-		thisSubdivision[(i * 2) + 1].XYZW[3] = 1.0f;
-		thisSubdivision[(i * 2) + 1].RGBA[0] = 0.0f;
-		thisSubdivision[(i * 2) + 1].RGBA[1] = 1.0f;
-		thisSubdivision[(i * 2) + 1].RGBA[2] = 1.0f;
-		thisSubdivision[(i * 2) + 1].RGBA[3] = 1.0f;
+		thisSubdivision[(i * 2) + 1].XYZW[0] = xCoord; // X
+		thisSubdivision[(i * 2) + 1].XYZW[1] = yCoord; // Y
+		thisSubdivision[(i * 2) + 1].XYZW[3] = 1.0f; // W
+		thisSubdivision[i * 2].SetColor(subdivideColor); // Subdivision Color Set
 
-		printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, i * 2, xCoord, yCoord);
+		// P[2i+1]
 		xCoord = ((4 * lastSubdivision[k].XYZW[0]) + (4 * lastSubdivision[i].XYZW[0])) / 8;
 		yCoord = ((4 * lastSubdivision[k].XYZW[1]) + (4 * lastSubdivision[i].XYZW[1])) / 8;
-		thisSubdivision[i * 2].XYZW[0] = xCoord;
-		thisSubdivision[i * 2].XYZW[1] = yCoord;
-		thisSubdivision[i * 2].XYZW[3] = 1.0f;
-		thisSubdivision[i * 2].RGBA[0] = 0.0f;
-		thisSubdivision[i * 2].RGBA[1] = 1.0f;
-		thisSubdivision[i * 2].RGBA[2] = 1.0f;
-		thisSubdivision[i * 2].RGBA[3] = 1.0f;
+		thisSubdivision[i * 2].XYZW[0] = xCoord; // X
+		thisSubdivision[i * 2].XYZW[1] = yCoord; // Y
+		thisSubdivision[i * 2].XYZW[3] = 1.0f; // W
+		thisSubdivision[i * 2].SetColor(subdivideColor); // Subdivision Color Set
 
+#ifdef DEBUG
+		printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, i * 2, xCoord, yCoord);
 		printf("Value of subdivision%d[%d]: %f, %f (X, Y)\n", kCount, (i * 2) + 1, xCoord, yCoord);
+#endif
+
 	}
+
+#ifdef DEBUG
 	printf("There were %d points in the previous subdiv level\n", numVerts); // Current # of CPoints for the K Level
+#endif
 
 }
 
