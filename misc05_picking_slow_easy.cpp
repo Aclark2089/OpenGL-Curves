@@ -79,14 +79,19 @@ void cleanup(void);
 static void mouseCallback(GLFWwindow*, int, int, int);
 static void keyCallback(GLFWwindow*, int, int, int, int);
 
+// Setup Functions
+void initIndicies(void);
+
 // Subdivision Functions
 void subdivide(void);
-void initSubIndicies(void);
 void initSubIndexCounts(void);
-void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int level);
+void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision, int level);
 
 // Bezier Functions
 void bezierCurve(void);
+void setAnchorPoints(const Vertex, const Vertex, const Vertex, int i);
+void calculateC1C2BezSegment(const Vertex, const Vertex, Vertex *, Vertex *);
+void calculateC0C3BezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *);
 
 // Catmull-Rom Functions
 void cRomCurve(void);
@@ -109,11 +114,16 @@ GLuint programID;
 GLuint pickingProgramID;
 
 // ATTN: INCREASE THIS NUMBER AS YOU CREATE NEW OBJECTS
-const GLuint NumObjects = 6;	// number of different "objects" to be drawn
-GLuint VertexArrayId[NumObjects] = { 0, 1, 2, 3, 4, 5 };
-GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5 };
-GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5 };
-size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5 };
+
+const GLuint NumObjects = 7;	// number of different "objects" to be drawn
+
+GLuint VertexArrayId[NumObjects] = { 0, // Verticies
+									1, 2, 3, 4, 5, // Subdivision
+									6 };			// Bezier
+
+GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6 };
+GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6 };
+size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5, 6 };
 
 GLuint MatrixID;
 GLuint ViewMatrixID;
@@ -158,7 +168,7 @@ float pickingColor[IndexCount] = { 0 / 255.0f, 1 / 255.0f, 2 / 255.0f, 3 / 255.0
 
 // Subdivisions
 int kCount = 0; // Level of Subdivision, level 0 == no subdivision
-unsigned short nCPoints = IndexCount; // Size of the original Verticies
+unsigned short nSubPoints = IndexCount; // Size of the original Verticies
 int kMax = 6; // Max # 5 subdivisions & original the Verticies level
 
 // subdivision indicies
@@ -185,6 +195,23 @@ Vertex* subdivision5Ptr = subdivision5;
 // Subdivision Counts
 std::vector<int> subIndexCounts; // A vector of sizes for the indicies / subdivision verticies
 
+
+// Bezier Curves
+
+// bezier arrays
+int nBezPts = 4; // # nBezPts per curve
+
+// bez indicies
+unsigned short bezIndicies[40];
+
+// bez array
+Vertex bezier[40]; // 40 bezier pts (N = 10 curves with 4 nBezPts)
+
+// bezier ptrs
+Vertex* bezierPtr = bezier; // Ptr to bezier array
+
+// Catmull - Rom Curves
+
 // Vertex Colors
 float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Cyan Color for subdiv pts
 float bezierColor[] = { 1.0f, 1.0f, 0.0f, 1.0f }; // Yellow Color for bezier verticies
@@ -195,7 +222,7 @@ void initSubIndexCounts() {
 	subIndexCounts.resize(kMax);
 	for (int i = 0; i < kMax; i++) { // From 0 to kMax subdivisions (including size of original @ (0))
 		if (i == 0) {
-			subIndexCounts.at(0) = (nCPoints); // Set size of Verticies
+			subIndexCounts.at(0) = (nSubPoints); // Set size of Verticies
 		}
 		else {
 			subIndexCounts.at(i) = (2 * subIndexCounts.at(i - 1)); // Else Vertex Size @ i = Size @ (i - 1) * 2
@@ -214,7 +241,9 @@ void initSubIndexCounts() {
 
 }
 
-void initSubIndicies() {
+void initIndicies() {
+
+	// Subdivisions
 	for (int i = 0; i < 20; i++) {
 		subIndicies1[i] = i;
 	}
@@ -230,6 +259,12 @@ void initSubIndicies() {
 	for (int i = 0; i < 320; i++) {
 		subIndicies5[i] = i;
 	}
+
+	// Bezier
+	for (int i = 0; i < nBezPts*IndexCount; i++) {
+		bezIndicies[i] = i;
+	}
+
 }
 
 void createObjects(void)
@@ -237,17 +272,25 @@ void createObjects(void)
 	// ATTN: DERIVE YOUR NEW OBJECTS HERE:
 	// each has one vertices {pos;color} and one indices array (no picking needed here
 	
-
+	// Check Sub
 	if (lastkey == 1) {
 		subdivide();
 	}
 
 	// Subdivision VAOs
-	createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
-	createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
-	createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
-	createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
 	createVAOs(subdivision1, subIndicies1, sizeof(subdivision1), sizeof(subIndicies1), 1);
+	createVAOs(subdivision2, subIndicies2, sizeof(subdivision2), sizeof(subIndicies2), 2);
+	createVAOs(subdivision3, subIndicies3, sizeof(subdivision3), sizeof(subIndicies3), 3);
+	createVAOs(subdivision4, subIndicies4, sizeof(subdivision4), sizeof(subIndicies4), 4);
+	createVAOs(subdivision5, subIndicies5, sizeof(subdivision5), sizeof(subIndicies5), 5);
+	
+	// Check Bez
+	if (lastkey == 2) {
+		bezierCurve();
+	}
+
+	// Bezier VAO
+	createVAOs(bezier, bezIndicies, sizeof(bezier), sizeof(bezIndicies), 6);
 	
 }
 
@@ -284,8 +327,6 @@ void drawScene(void)
 
 		if (lastkey == 1)
 		{
-
-
 			switch (kCount) {
 				case 5:
 
@@ -333,6 +374,18 @@ void drawScene(void)
 					break;
 			}
 		}
+
+		// Create Bez Curve
+		if (lastkey == 2)
+		{
+				glBindVertexArray(VertexArrayId[6]);	// draw Vertices
+				glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[6]);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezier), bezier);
+				//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+				glDrawElements(GL_POINTS, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);
+		}
+
+
 		// Binding All VAOs
 		glBindVertexArray(0);
 
@@ -597,7 +650,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 			str = "\nKey 2 Was Released\n";
 			lastkey = 2;
 			kCount = 0;
-			//bezierCurve();
+			bezierCurve();
 			break;
 		case GLFW_KEY_3:
 			str = "\nKey 3 Was Released\n";
@@ -647,12 +700,12 @@ void subdivide() {
 		kCount = 0;
 #ifdef DEBUG
 		printf("\nReseting K count\n");
-		printf("\nnCPoints value reset to %d\n", subIndexCounts.at(0));
+		printf("\nnSubPoints value reset to %d\n", subIndexCounts.at(0));
 #endif
 	}
 }
 
-void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int level) {
+void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision, int level) {
 
 	// Values for the coords & keeping position
 	float xCoord; // X Coord For The Vertex
@@ -706,7 +759,103 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* lastSubdivision, int 
 
 }
 
-void bezierCurve() {}
+void bezierCurve() {
+
+	int j;
+	int k;
+
+	for (int i = 0; i < IndexCount; i++) {
+		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
+		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
+
+#ifdef DEBUG
+		printf("Setting anchor points of %d and %d\n", i, j);
+#endif
+		setAnchorPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], i);
+
+#ifdef DEBUG
+		getchar();
+#endif
+		
+	}
+}
+
+void setAnchorPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, int i) {
+
+	calculateC1C2BezSegment(p1, pPlus1, &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2]);
+	calculateC0C3BezSegment(p1, pPlus1, pMinus1, &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 4]);
+
+#ifdef DEBUG
+	printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
+	printf("Positions in bezier array were %d and %d", (i * 4) + 1, (i * 4) + 2);
+#endif
+	
+}
+
+void calculateC1C2BezSegment(const Vertex p1, const Vertex pPlus1, Vertex* c1, Vertex* c2) {
+
+	// Values for the coords & keeping position
+	float x1; // X Coord For The Vertex
+	float y1; // Y Coord For The Vertex
+
+	float x2; // X Coord For The Vertex
+	float y2; // Y Coord For The Vertex
+
+	// calc c1 xy
+	x1 = ((2 * p1.XYZW[0]) + pPlus1.XYZW[0]) / 3;
+	y1 = (2 * (p1.XYZW[1]) + pPlus1.XYZW[1]) / 3;
+
+	// calc c2 xy
+	x2 = (p1.XYZW[0] + (2 * pPlus1.XYZW[0])) / 3;
+	y2 = (p1.XYZW[1] + (2 * pPlus1.XYZW[1])) / 3;
+
+	// Set xy for c1
+	c1->XYZW[0] = x1;
+	c1->XYZW[1] = y1;
+	c1->XYZW[2] = 0.0f;
+	c1->XYZW[3] = 1.0f;
+	c1->SetColor(bezierColor);
+
+	// Set xy for c2
+	c2->XYZW[0] = x2;
+	c2->XYZW[1] = y2;
+	c2->XYZW[2] = 0.0f;
+	c2->XYZW[3] = 1.0f;
+	c2->SetColor(bezierColor);
+}
+
+void calculateC0C3BezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, Vertex* c1, Vertex* c2) {
+
+	// Values for the coords & keeping position
+	float x1; // X Coord For The Vertex
+	float y1; // Y Coord For The Vertex
+
+	float x2; // X Coord For The Vertex
+	float y2; // Y Coord For The Vertex
+
+	// calc c0 xy
+	x1 = (pMinus1.XYZW[0] + (2 * p1.XYZW[0])) / 3;
+	y1 = (2 * (p1.XYZW[1]) + pPlus1.XYZW[1]) / 3;
+
+	// calc c3 xy
+	x2 = (p1.XYZW[0] + (2 * pPlus1.XYZW[0])) / 3;
+	y2 = (p1.XYZW[1] + (2 * pPlus1.XYZW[1])) / 3;
+
+	// Set xy for c0
+	c1->XYZW[0] = x1;
+	c1->XYZW[1] = y1;
+	c1->XYZW[2] = 0.0f;
+	c1->XYZW[3] = 1.0f;
+	c1->SetColor(bezierColor);
+
+	// Set xy for c3
+	c2->XYZW[0] = x2;
+	c2->XYZW[1] = y2;
+	c2->XYZW[2] = 0.0f;
+	c2->XYZW[3] = 1.0f;
+	c2->SetColor(bezierColor);
+
+}
 
 void catmullRom() {}
 
@@ -719,7 +868,7 @@ int main(void)
 
 	// Setup Subdivision
 	initSubIndexCounts();
-	initSubIndicies();
+	initIndicies();
 
 	// initialize OpenGL pipeline
 	initOpenGL();
