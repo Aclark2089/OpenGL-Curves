@@ -89,9 +89,7 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision
 
 // Bezier Functions
 void bezierCurve(void);
-void setAnchorPoints(const Vertex, const Vertex, const Vertex, int i);
-void calculateC1C2BezSegment(const Vertex, const Vertex, Vertex *, Vertex *);
-void calculateC0C3BezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *);
+void calculateBezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
 
 // Catmull-Rom Functions
 void cRomCurve(void);
@@ -771,39 +769,37 @@ void bezierCurve() {
 #ifdef DEBUG
 		printf("Setting anchor points of %d and %d\n", i, j);
 #endif
-		setAnchorPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], i);
+
+		calculateBezSegment(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2], &bezierPtr[(4 * i) + 3]);
 
 #ifdef DEBUG
+		printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
+		printf("Positions in bezier array were %d and %d", (i * 4) + 1, (i * 4) + 2);
 		getchar();
 #endif
 		
 	}
 }
 
-void setAnchorPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, int i) {
-
-	calculateC1C2BezSegment(p1, pPlus1, &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2]);
-	calculateC0C3BezSegment(p1, pPlus1, pMinus1, &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 4]);
-
-#ifdef DEBUG
-	printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
-	printf("Positions in bezier array were %d and %d", (i * 4) + 1, (i * 4) + 2);
-#endif
-	
-}
-
-void calculateC1C2BezSegment(const Vertex p1, const Vertex pPlus1, Vertex* c1, Vertex* c2) {
+void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, Vertex* c0, Vertex* c1, Vertex* c2, Vertex* c3) {
 
 	// Values for the coords & keeping position
-	float x1; // X Coord For The Vertex
-	float y1; // Y Coord For The Vertex
 
-	float x2; // X Coord For The Vertex
-	float y2; // Y Coord For The Vertex
+	float x0; // X Coord For The c0 Vertex
+	float y0; // Y Coord For The c0 Vertex
+
+	float x1; // X Coord For The c1 Vertex
+	float y1; // Y Coord For The c1 Vertex
+
+	float x2; // X Coord For The c2 Vertex
+	float y2; // Y Coord For The c2 Vertex
+
+	float x3; // X Coord For The c3 Vertex
+	float y3; // Y Coord For The c3 Vertex
 
 	// calc c1 xy
 	x1 = ((2 * p1.XYZW[0]) + pPlus1.XYZW[0]) / 3;
-	y1 = (2 * (p1.XYZW[1]) + pPlus1.XYZW[1]) / 3;
+	y1 = ((2 * p1.XYZW[1]) + pPlus1.XYZW[1]) / 3;
 
 	// calc c2 xy
 	x2 = (p1.XYZW[0] + (2 * pPlus1.XYZW[0])) / 3;
@@ -822,39 +818,31 @@ void calculateC1C2BezSegment(const Vertex p1, const Vertex pPlus1, Vertex* c1, V
 	c2->XYZW[2] = 0.0f;
 	c2->XYZW[3] = 1.0f;
 	c2->SetColor(bezierColor);
-}
-
-void calculateC0C3BezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, Vertex* c1, Vertex* c2) {
-
-	// Values for the coords & keeping position
-	float x1; // X Coord For The Vertex
-	float y1; // Y Coord For The Vertex
-
-	float x2; // X Coord For The Vertex
-	float y2; // Y Coord For The Vertex
 
 	// calc c0 xy
-	x1 = (pMinus1.XYZW[0] + (2 * p1.XYZW[0])) / 3;
-	y1 = (2 * (p1.XYZW[1]) + pPlus1.XYZW[1]) / 3;
+	x0 = (pMinus1.XYZW[0] + (2 * p1.XYZW[0])) / 3;
+	y0 = (pMinus1.XYZW[1] + (2 * p1.XYZW[1])) / 3;
+
+	x0 = (x0 + x1) / 2;
+	y0 = (y0 + y1) / 2;
 
 	// calc c3 xy
-	x2 = (p1.XYZW[0] + (2 * pPlus1.XYZW[0])) / 3;
-	y2 = (p1.XYZW[1] + (2 * pPlus1.XYZW[1])) / 3;
+	x3 = (p1.XYZW[0] + (2 * pPlus1.XYZW[0])) / 3;
+	y3 = (p1.XYZW[1] + (2 * pPlus1.XYZW[1])) / 3;
 
 	// Set xy for c0
-	c1->XYZW[0] = x1;
-	c1->XYZW[1] = y1;
-	c1->XYZW[2] = 0.0f;
-	c1->XYZW[3] = 1.0f;
-	c1->SetColor(bezierColor);
+	c0->XYZW[0] = x0;
+	c0->XYZW[1] = y0;
+	c0->XYZW[2] = 0.0f;
+	c0->XYZW[3] = 1.0f;
+	c0->SetColor(bezierColor);
 
 	// Set xy for c3
-	c2->XYZW[0] = x2;
-	c2->XYZW[1] = y2;
-	c2->XYZW[2] = 0.0f;
-	c2->XYZW[3] = 1.0f;
-	c2->SetColor(bezierColor);
-
+	c3->XYZW[0] = x3;
+	c3->XYZW[1] = y3;
+	c3->XYZW[2] = 0.0f;
+	c3->XYZW[3] = 1.0f;
+	c3->SetColor(bezierColor);
 }
 
 void catmullRom() {}

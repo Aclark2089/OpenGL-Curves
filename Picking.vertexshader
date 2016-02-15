@@ -10,7 +10,7 @@ uniform float PickingColorArray[10];		// picking ID mark (one per vertex/point)
 uniform mat4 MVP;
 
 void main(){
-	gl_PointSize = 20.0;
+	gl_PointSize = 10.0;
 
 	vs_vertexColor = vec4(PickingColorArray[gl_VertexID], 0.0, 0.0, 1.0);	// set color based on the ID mark
 
