@@ -20,7 +20,7 @@ Pressing and releasing key '2' displays standard bezier curves calculated using 
 * Control Point c0: Avg. of (((2P[i-1] + P[i]) / 3) + 2P[i] + P[i+1])) / 2
 * Control Point c1: 2P[i] + P[i+1] / 3
 * Control Point c2: P[i] + 2P[i+1] / 3
-* Control Point c3: P[i] + 2P[i+1] / 3
+* Control Point c3: (((P[i] + 2P[i+1] / 3) + (2P[i+1] + P[i+2]))) / 2
 
 ### Task 3 - Catmull Rom Curves w/ Decastlejau Algorithm
 Pressing and releasing key '3' displays Catmull-Rom splines (red) and curve calculated using the Decastlejau algorithm (green curve).
