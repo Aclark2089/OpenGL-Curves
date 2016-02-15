@@ -92,7 +92,8 @@ void bezierCurve(void);
 void calculateBezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
 
 // Catmull-Rom Functions
-void cRomCurve(void);
+void cRomCurve(const Vertex, const Vertex);
+void colorBezRed(void);
 
 // GLOBAL VARIABLES
 GLFWwindow* window;
@@ -113,15 +114,16 @@ GLuint pickingProgramID;
 
 // ATTN: INCREASE THIS NUMBER AS YOU CREATE NEW OBJECTS
 
-const GLuint NumObjects = 7;	// number of different "objects" to be drawn
+const GLuint NumObjects = 8;	// number of different "objects" to be drawn
 
-GLuint VertexArrayId[NumObjects] = { 0, // Verticies
-									1, 2, 3, 4, 5, // Subdivision
-									6 };			// Bezier
+GLuint VertexArrayId[NumObjects] = { 0, // Verticies Array
+									1, 2, 3, 4, 5, // Subdivision Arrays
+									6,	// Bezier Array
+									7 };	// Catmull - Rom Array					
 
-GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6 };
-GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6 };
-size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5, 6 };
+GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 GLuint MatrixID;
 GLuint ViewMatrixID;
@@ -193,10 +195,9 @@ Vertex* subdivision5Ptr = subdivision5;
 // Subdivision Counts
 std::vector<int> subIndexCounts; // A vector of sizes for the indicies / subdivision verticies
 
-
 // Bezier Curves
 
-// bezier arrays
+// bezier points
 int nBezPts = 4; // # nBezPts per curve
 
 // bez indicies
@@ -210,10 +211,23 @@ Vertex* bezierPtr = bezier; // Ptr to bezier array
 
 // Catmull - Rom Curves
 
+// cRom points
+int nCRomPts = 15; // 15 cRom points per segment
+
+// cRom indicies
+unsigned short cRomIndicies[150]; // indicies for the cRom curve
+
+// cRom Array
+Vertex cRom[150]; // 150 cRom pts (N = 10 segments @ 15 pts per segment)
+
+// cRom ptr
+Vertex* cRomPtr = cRom;	  // ptr to the cRom Segments Array
+
 // Vertex Colors
 float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Cyan Color for subdiv pts
 float bezierColor[] = { 1.0f, 1.0f, 0.0f, 1.0f }; // Yellow Color for bezier verticies
-float catColor[] = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red Color for catmull-rom verticies
+float cRomPtsColor[] = { 1.0f, 0.0f, 0.0f, 1.0f }; // Red Color for catmull-rom bezier verts
+float cRomCurveColor[] = { 0.0f, 1.0f, 0.0f, 1.0f };
 
 // Setup the indicies for the subdivisions
 void initSubIndexCounts() {
@@ -263,6 +277,11 @@ void initIndicies() {
 		bezIndicies[i] = i;
 	}
 
+	// Catmull - Rom
+	for (int i = 0; i < nCRomPts*IndexCount; i++) {
+		cRomIndicies[i] = i;
+	}
+
 }
 
 void createObjects(void)
@@ -289,6 +308,15 @@ void createObjects(void)
 
 	// Bezier VAO
 	createVAOs(bezier, bezIndicies, sizeof(bezier), sizeof(bezIndicies), 6);
+
+	if (lastkey == 3) {
+		bezierCurve();
+		colorBezRed();
+		//cRomCurve();
+	}
+
+	// Catmull - Rom VAO
+	createVAOs(cRom, cRomIndicies, sizeof(cRom), sizeof(cRomIndicies), 7);
 	
 }
 
@@ -323,8 +351,9 @@ void drawScene(void)
 
 		// ATTN: OTHER BINDING AND DRAWING COMMANDS GO HERE, one set per object:
 
-		if (lastkey == 1)
+		switch (lastkey)
 		{
+		case 1:
 			switch (kCount) {
 				case 5:
 
@@ -371,16 +400,21 @@ void drawScene(void)
 					glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 			}
-		}
-
+			break;
 		// Create Bez Curve
-		if (lastkey == 2)
-		{
-				glBindVertexArray(VertexArrayId[6]);	// draw Vertices
-				glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[6]);
-				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezier), bezier);
-				//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-				glDrawElements(GL_POINTS, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);
+		case 3:
+			glBindVertexArray(VertexArrayId[7]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[7]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cRom), cRom);
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[7], GL_UNSIGNED_SHORT, (void*)0);
+
+		case 2:
+			glBindVertexArray(VertexArrayId[6]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[6]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezier), bezier);
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);				
 		}
 
 
@@ -759,7 +793,7 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision
 
 void bezierCurve() {
 
-	int j;
+	int j;				 
 	int k;
 
 	for (int i = 0; i < IndexCount; i++) {
@@ -845,7 +879,15 @@ void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 	c3->SetColor(bezierColor);
 }
 
-void catmullRom() {}
+void cRomCurve(const Vertex p1, const Vertex pPlus1) {
+	
+}
+
+void colorBezRed() {
+	for (int i = 0; i < nBezPts * IndexCount; i++) {
+		bezierPtr[i].SetColor(cRomPtsColor);
+	}
+}
 
 int main(void)
 {
