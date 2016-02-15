@@ -92,8 +92,9 @@ void bezierCurve(void);
 void calculateBezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
 
 // Catmull-Rom Functions
-void cRomCurve(const Vertex, const Vertex);
-void colorBezRed(void);
+void cRomCurve(void);
+void calculateCRomPoints(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
+void calculateDecastlejauPoints(float u, int currIndex, int startIndex);
 
 // GLOBAL VARIABLES
 GLFWwindow* window;
@@ -114,16 +115,17 @@ GLuint pickingProgramID;
 
 // ATTN: INCREASE THIS NUMBER AS YOU CREATE NEW OBJECTS
 
-const GLuint NumObjects = 8;	// number of different "objects" to be drawn
+const GLuint NumObjects = 9;	// number of different "objects" to be drawn
 
-GLuint VertexArrayId[NumObjects] = { 0, // Verticies Array
-									1, 2, 3, 4, 5, // Subdivision Arrays
-									6,	// Bezier Array
-									7 };	// Catmull - Rom Array					
+GLuint VertexArrayId[NumObjects] = { 0,				// Verticies Array
+									1, 2, 3, 4, 5,  // Subdivision Arrays
+									6,				// Bezier Array
+									7, 				// Catmull - Rom Pts Array 
+									8 };			// Decastlejau Pts Array					
 
-GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+GLuint VertexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+GLuint IndexBufferId[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+size_t NumVert[NumObjects] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 
 GLuint MatrixID;
 GLuint ViewMatrixID;
@@ -212,16 +214,20 @@ Vertex* bezierPtr = bezier; // Ptr to bezier array
 // Catmull - Rom Curves
 
 // cRom points
-int nCRomPts = 15; // 15 cRom points per segment
+int nCRomPts = 4; // 15 cRom points per segment
+int nDecastlePts = 15;
 
 // cRom indicies
-unsigned short cRomIndicies[150]; // indicies for the cRom curve
+unsigned short cRomIndicies[40]; // indicies for the cRom bezier pts
+unsigned short decastleIndicies[150]; // indicies for cRom curve
 
 // cRom Array
-Vertex cRom[150]; // 150 cRom pts (N = 10 segments @ 15 pts per segment)
+Vertex cRom[40]; // 40 cRom pts (N = 10 segments @ 4 pts per segment)
+Vertex decastle[150]; // 150 decastle pts (N = 10 segments @ 15 pts per segment)
 
 // cRom ptr
 Vertex* cRomPtr = cRom;	  // ptr to the cRom Segments Array
+Vertex* decastlePtr = decastle;
 
 // Vertex Colors
 float subdivideColor[] = { 0.0f, 1.0f, 1.0f, 1.0f }; // Cyan Color for subdiv pts
@@ -282,6 +288,11 @@ void initIndicies() {
 		cRomIndicies[i] = i;
 	}
 
+	// Decastlejau
+	for (int i = 0; i < nDecastlePts*IndexCount; i++) {
+		decastleIndicies[i] = i;
+	}
+
 }
 
 void createObjects(void)
@@ -310,13 +321,12 @@ void createObjects(void)
 	createVAOs(bezier, bezIndicies, sizeof(bezier), sizeof(bezIndicies), 6);
 
 	if (lastkey == 3) {
-		bezierCurve();
-		colorBezRed();
-		//cRomCurve();
+		cRomCurve();
 	}
 
 	// Catmull - Rom VAO
 	createVAOs(cRom, cRomIndicies, sizeof(cRom), sizeof(cRomIndicies), 7);
+	createVAOs(decastle, decastleIndicies, sizeof(decastle), sizeof(decastleIndicies), 8);
 	
 }
 
@@ -401,7 +411,17 @@ void drawScene(void)
 					break;
 			}
 			break;
+
 		// Create Bez Curve
+		case 2:
+			glBindVertexArray(VertexArrayId[6]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[6]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezier), bezier);
+			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_POINTS, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);
+			break;
+
+		// Create Catmull Rom Curve using CRom pts and Decastlejau pts
 		case 3:
 			glBindVertexArray(VertexArrayId[7]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[7]);
@@ -409,12 +429,12 @@ void drawScene(void)
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[7], GL_UNSIGNED_SHORT, (void*)0);
 
-		case 2:
-			glBindVertexArray(VertexArrayId[6]);	// draw Vertices
-			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[6]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezier), bezier);
+			glBindVertexArray(VertexArrayId[8]);	// draw Vertices
+			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[8]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(decastle), decastle);
 			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);				
+			glDrawElements(GL_POINTS, NumVert[8], GL_UNSIGNED_SHORT, (void*)0);
+
 		}
 
 
@@ -682,13 +702,11 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 			str = "\nKey 2 Was Released\n";
 			lastkey = 2;
 			kCount = 0;
-			bezierCurve();
 			break;
 		case GLFW_KEY_3:
 			str = "\nKey 3 Was Released\n";
 			lastkey = 3;
 			kCount = 0;
-			//cRomCurve();
 			break;
 		default:
 			str = "\nKey pressed\n";
@@ -730,6 +748,7 @@ void subdivide() {
 
 		// Reset Subdivision Layer to 0
 		kCount = 0;
+
 #ifdef DEBUG
 		printf("\nReseting K count\n");
 		printf("\nnSubPoints value reset to %d\n", subIndexCounts.at(0));
@@ -801,14 +820,15 @@ void bezierCurve() {
 		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
 
 #ifdef DEBUG
-		printf("Setting anchor points of %d and %d\n", i, j);
+		printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
 #endif
 
 		calculateBezSegment(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2], &bezierPtr[(4 * i) + 3]);
 
 #ifdef DEBUG
 		printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
-		printf("Positions in bezier array were %d and %d", (i * 4) + 1, (i * 4) + 2);
+		printf("Bezier c0 and c3 set to %f,%f and %f,%f\n", bezierPtr[(4 * i)].XYZW[0], bezierPtr[(4 * i)].XYZW[1], bezier[(4 * i) + 3].XYZW[0], bezier[(4 * i) + 3].XYZW[1]);
+		printf("Positions in Bezier array were c1: %d, c2: %d, c3: %d, and c4: %d\n", (i * 4), (i * 4) + 1, (i * 4) + 2, (i * 4) + 3);
 		getchar();
 #endif
 		
@@ -857,6 +877,7 @@ void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 	x0 = (pMinus1.XYZW[0] + (2 * p1.XYZW[0])) / 3;
 	y0 = (pMinus1.XYZW[1] + (2 * p1.XYZW[1])) / 3;
 
+	// midpoint of i-1 and i Vertex
 	x0 = (x0 + x1) / 2;
 	y0 = (y0 + y1) / 2;
 
@@ -879,14 +900,115 @@ void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 	c3->SetColor(bezierColor);
 }
 
-void cRomCurve(const Vertex p1, const Vertex pPlus1) {
-	
+void cRomCurve() {
+
+	int j;
+	int k;
+
+	for (int i = 0; i < IndexCount; i++) {
+		
+		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
+		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
+
+#ifdef DEBUG
+			printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
+#endif
+
+			calculateCRomPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], &cRomPtr[(4 * i)], &cRomPtr[(4 * i) + 1], &cRomPtr[(4 * i) + 2], &cRomPtr[(4 * i) + 3]);
+
+#ifdef DEBUG
+			printf("cRom c1 and c2 set to %f,%f and %f,%f\n", cRomPtr[(4 * i) + 1].XYZW[0], cRomPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], cRomPtr[(4 * i) + 2].XYZW[1]);
+			printf("cRom c0 and c3 set to %f,%f and %f,%f\n", cRomPtr[(4 * i)].XYZW[0], cRomPtr[(4 * i)].XYZW[1], bezier[(4 * i) + 3].XYZW[0], cRomPtr[(4 * i) + 3].XYZW[1]);
+			printf("Positions in cRom array were c1: %d, c2: %d, c3: %d, and c4: %d\n", (i * 4), (i * 4) + 1, (i * 4) + 2, (i * 4) + 3);
+			getchar();
+#endif
+
+	}
+
+for (int i = 0; i < IndexCount; i++) {
+
+		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
+		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
+
+		//calculateDecastlejauPoints();
+
+#ifdef DEBUG
+		printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
+		printf("Positions in bezier array were %d and %d", (i * 4) + 1, (i * 4) + 2);
+		getchar();
+#endif
+
+	}
 }
 
-void colorBezRed() {
-	for (int i = 0; i < nBezPts * IndexCount; i++) {
-		bezierPtr[i].SetColor(cRomPtsColor);
-	}
+void calculateCRomPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, Vertex* c0, Vertex* c1, Vertex* c2, Vertex* c3) {
+
+	// Values for the coords & keeping position
+
+	float x0; // X Coord For The c0 Vertex
+	float y0; // Y Coord For The c0 Vertex
+
+	float x1; // X Coord For The c1 Vertex
+	float y1; // Y Coord For The c1 Vertex
+
+	float x2; // X Coord For The c2 Vertex
+	float y2; // Y Coord For The c2 Vertex
+
+	float x3; // X Coord For The c3 Vertex
+	float y3; // Y Coord For The c3 Vertex
+
+	float xTangent = pPlus1.XYZW[0] - pMinus1.XYZW[0]; // X tangent
+	float yTangent = pPlus1.XYZW[1] - pMinus1.XYZW[1]; // Y tangent
+	float tWeight = 0.2; // t value @ position for pt (affects where the cRomPoints are displayed, tried to get it close to the website's)
+
+	// Calculate c0
+	x0 = p1.XYZW[0];
+	y0 = p1.XYZW[1];
+
+	// Calculate c1
+	x1 = x0 - tWeight*xTangent;
+	y1 = y0 - tWeight*yTangent;
+
+	// Calculate c2
+	x2 = x0 + tWeight*xTangent;
+	y2 = y0 + tWeight*yTangent;
+
+	// Calculate c3
+	x3 = pPlus1.XYZW[0];
+	y3 = pPlus1.XYZW[1];
+
+	// Set c0
+	c0->XYZW[0] = x0;
+	c0->XYZW[1] = y0;
+	c0->XYZW[2] = 0.0f;
+	c0->XYZW[3] = 1.0f;
+	c0->SetColor(cRomPtsColor);
+
+	// Set c1
+	c1->XYZW[0] = x1;
+	c1->XYZW[1] = y1;
+	c1->XYZW[2] = 0.0f;
+	c1->XYZW[3] = 1.0f;
+	c1->SetColor(cRomPtsColor);
+
+	// Set c2
+	c2->XYZW[0] = x2;
+	c2->XYZW[1] = y2;
+	c2->XYZW[2] = 0.0f;
+	c2->XYZW[3] = 1.0f;
+	c2->SetColor(cRomPtsColor);
+
+	// Set c3
+	c3->XYZW[0] = x3;
+	c3->XYZW[1] = y3;
+	c3->XYZW[2] = 0.0f;
+	c3->XYZW[3] = 1.0f;
+	c3->SetColor(cRomPtsColor);
+
+}
+
+void calculateDecastlejauPoints() {
+
 }
 
 int main(void)
