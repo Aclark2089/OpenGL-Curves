@@ -94,7 +94,7 @@ void calculateBezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Ver
 // Catmull-Rom Functions
 void cRomCurve(void);
 void calculateCRomPoints(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
-void calculateDecastlejauPoints(float u, int currIndex, int startIndex);
+void calculateDecastlejauPoints(const Vertex, const Vertex, int currIndex);
 
 // GLOBAL VARIABLES
 GLFWwindow* window;
@@ -928,9 +928,8 @@ void cRomCurve() {
 for (int i = 0; i < IndexCount; i++) {
 
 		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
-		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
 
-		//calculateDecastlejauPoints();
+		calculateDecastlejauPoints(verticiesPtr[i], verticiesPtr[j], i);
 
 #ifdef DEBUG
 		printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
@@ -1007,8 +1006,22 @@ void calculateCRomPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 
 }
 
-void calculateDecastlejauPoints() {
-
+void calculateDecastlejauPoints(const Vertex p1, const Vertex p2, int currIndex) {
+	
+	// Our value of t, which moves 1/15 of the way across the curve each time
+	float t = (1/0.15)/100;
+	// Set our t value into a changeable copy
+	float u = t;
+	
+	// For each of the 15 points along the curve p1 to p2 for this segment (determined by currIndex of the Verticies), use
+	// Decastle to move forward by t, and then calculate the decastle point x and y values
+	for (int j = 0; j < nDecastlePts; j++, u += t) {
+		decastlePtr[j + (15 * currIndex)].XYZW[0] = (1 - u)*(p1.XYZW[0]) + u*(p2.XYZW[0]);	  // X
+		decastlePtr[j + (15 * currIndex)].XYZW[1] = (1 - u)*(p1.XYZW[1]) + u*(p2.XYZW[1]);	  // Y
+		decastlePtr[j + (15 * currIndex)].XYZW[2] = 0.0f;									 // Z
+		decastlePtr[j + (15 * currIndex)].XYZW[3] = 1.0f;									 // W
+		decastlePtr[j + (15 * currIndex)].SetColor(cRomCurveColor);							// Color
+	}
 }
 
 int main(void)
