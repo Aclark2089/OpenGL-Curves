@@ -89,7 +89,7 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision
 
 // Bezier Functions
 void bezierCurve(void);
-void calculateBezSegment(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
+void calculateBezSegment(const Vertex, const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
 
 // Catmull-Rom Functions
 void cRomCurve(void);
@@ -812,18 +812,17 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision
 
 void bezierCurve() {
 
-	int j;				 
-	int k;
-
-	for (int i = 0; i < IndexCount; i++) {
+	for (int i = 0, j, k, l; i < IndexCount; i++) {
 		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
 		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
+		(i == (IndexCount - 2)) ? (l = 0) : (l = i + 2);
+
 
 #ifdef DEBUG
 		printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
 #endif
 
-		calculateBezSegment(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2], &bezierPtr[(4 * i) + 3]);
+		calculateBezSegment(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], verticiesPtr[l], &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2], &bezierPtr[(4 * i) + 3]);
 
 #ifdef DEBUG
 		printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
@@ -835,7 +834,7 @@ void bezierCurve() {
 	}
 }
 
-void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, Vertex* c0, Vertex* c1, Vertex* c2, Vertex* c3) {
+void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, const Vertex pPlus2, Vertex* c0, Vertex* c1, Vertex* c2, Vertex* c3) {
 
 	// Values for the coords & keeping position
 
@@ -882,8 +881,11 @@ void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 	y0 = (y0 + y1) / 2;
 
 	// calc c3 xy
-	x3 = (p1.XYZW[0] + (2 * pPlus1.XYZW[0])) / 3;
-	y3 = (p1.XYZW[1] + (2 * pPlus1.XYZW[1])) / 3;
+	x3 = ((2 * pPlus1.XYZW[0]) + pPlus2.XYZW[0]) / 3;
+	y3 = ((2 * pPlus1.XYZW[1]) + pPlus2.XYZW[1]) / 3;
+
+	x3 = (x3 + x2) / 2;
+	y3 = (y3 + y2) / 2;
 
 	// Set xy for c0
 	c0->XYZW[0] = x0;
