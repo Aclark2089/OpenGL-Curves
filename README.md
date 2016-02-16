@@ -17,7 +17,7 @@ Pressing and releasing key '1' causes subdivision of the verticies to occur. Thi
 
 ### Task 2 - Bezier Curves
 Pressing and releasing key '2' displays standard bezier curves calculated using following formulas:
-* Control Point c0: Avg. of (((2P[i-1] + P[i]) / 3) + 2P[i] + P[i+1])) / 2
+* Control Point c0: (((2P[i-1] + P[i]) / 3) + 2P[i] + P[i+1])) / 2
 * Control Point c1: 2P[i] + P[i+1] / 3
 * Control Point c2: P[i] + 2P[i+1] / 3
 * Control Point c3: (((P[i] + 2P[i+1] / 3) + (2P[i+1] + P[i+2]))) / 2
