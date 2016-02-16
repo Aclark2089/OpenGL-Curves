@@ -94,7 +94,6 @@ void calculateBezSegment(const Vertex, const Vertex, const Vertex, const Vertex,
 // Catmull-Rom Functions
 void cRomCurve(void);
 void calculateCRomPoints(const Vertex, const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
-void calculateDecastlejauPoints(const Vertex, const Vertex, int currIndex);
 
 // GLOBAL VARIABLES
 GLFWwindow* window;
@@ -428,7 +427,6 @@ void drawScene(void)
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[8]);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(decastle), decastle);
 			glDrawElements(GL_LINE_LOOP, NumVert[8], GL_UNSIGNED_SHORT, (void*)0);
-			glDrawElements(GL_POINTS, NumVert[8], GL_UNSIGNED_SHORT, (void*)0);
 
 		}
 
@@ -721,7 +719,7 @@ void subdivide() {
 #ifdef DEBUG
 		printf("\nK value: %d\n", kCount); // Current K Level
 #endif
-
+		 // Calculate the subdivision at this point
 		calculateSubdivision(subdivision1Ptr, verticiesPtr, 1); // Calculate the subdiv of level 1
 
 		// For each level of k past 1 we need to work our way down and calculate each subsequent level of subdiv
@@ -806,7 +804,7 @@ void calculateSubdivision(Vertex* thisSubdivision, Vertex* const lastSubdivision
 }
 
 void bezierCurve() {
-
+	// Handle cases outside bounds of the array
 	for (int i = 0, j, k, l; i < IndexCount; i++) {
 		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
 		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
@@ -816,7 +814,7 @@ void bezierCurve() {
 #ifdef DEBUG
 		printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
 #endif
-
+		 // Calculate bezier segment using i, i+1, i-1, and i+2
 		calculateBezSegment(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], verticiesPtr[l], &bezierPtr[(4 * i)], &bezierPtr[(4 * i) + 1], &bezierPtr[(4 * i) + 2], &bezierPtr[(4 * i) + 3]);
 
 #ifdef DEBUG
@@ -897,42 +895,64 @@ void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 	c3->SetColor(bezierColor);
 }
 
+
+// Calculate the cRomCurve
 void cRomCurve() {
-
-	
-
+	// Loop through Verticies and calculate the cRom points
 	for (int i = 0, j, k, l; i < IndexCount; i++) {
-		
+
+		// Handle cases outside bounds of verticies
 		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
 		(j == (IndexCount - 1)) ? (l = 0) : (l = j + 1);
 		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
 
 #ifdef DEBUG
-			printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
+		printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
 #endif
 
-			calculateCRomPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], verticiesPtr[l], &cRomPtr[(4 * i)], &cRomPtr[(4 * i) + 1], &cRomPtr[(4 * i) + 2], &cRomPtr[(4 * i) + 3]);
+		// Calculate our cRom Points
+		calculateCRomPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], verticiesPtr[l], &cRomPtr[(4 * i)], &cRomPtr[(4 * i) + 1], &cRomPtr[(4 * i) + 2], &cRomPtr[(4 * i) + 3]);
 
 #ifdef DEBUG
-			printf("cRom c1 and c2 set to %f,%f and %f,%f\n", cRomPtr[(4 * i) + 1].XYZW[0], cRomPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], cRomPtr[(4 * i) + 2].XYZW[1]);
-			printf("cRom c0 and c3 set to %f,%f and %f,%f\n", cRomPtr[(4 * i)].XYZW[0], cRomPtr[(4 * i)].XYZW[1], bezier[(4 * i) + 3].XYZW[0], cRomPtr[(4 * i) + 3].XYZW[1]);
-			printf("Positions in cRom array were c1: %d, c2: %d, c3: %d, and c4: %d\n", (i * 4), (i * 4) + 1, (i * 4) + 2, (i * 4) + 3);
-			getchar();
+		printf("cRom c1 and c2 set to %f,%f and %f,%f\n", cRomPtr[(4 * i) + 1].XYZW[0], cRomPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], cRomPtr[(4 * i) + 2].XYZW[1]);
+		printf("cRom c0 and c3 set to %f,%f and %f,%f\n", cRomPtr[(4 * i)].XYZW[0], cRomPtr[(4 * i)].XYZW[1], bezier[(4 * i) + 3].XYZW[0], cRomPtr[(4 * i) + 3].XYZW[1]);
+		printf("Positions in cRom array were c1: %d, c2: %d, c3: %d, and c4: %d\n", (i * 4), (i * 4) + 1, (i * 4) + 2, (i * 4) + 3);
+		getchar();
 #endif
 
 	}
 
-for (int i = 0, j; i < IndexCount; i++) {
+// Temporary Array Q to hold all of our points we collect from each iteration of the Decastlejau alg.
+Vertex Q[40];
 
-		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
+for (int i = 0; i < IndexCount; i++) {
+	for (int u = 0; u < 15; u++) {
 
-		calculateDecastlejauPoints(verticiesPtr[i], verticiesPtr[j], i);
+		// Copy Bezier Points from cRom into Q
+		for (int j = 0; j < 40; j++) {
+			Q[j] = cRomPtr[j];
+		}
 
-#ifdef DEBUG
-		printf("Bezier c1 and c2 set to %f,%f and %f,%f\n", bezierPtr[(4 * i) + 1].XYZW[0], bezierPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], bezier[(4 * i) + 2].XYZW[1]);
-		printf("Positions in bezier array were %d and %d", (i * 4) + 1, (i * 4) + 2);
-		getchar();
-#endif
+		// Use Decastlejau alg to calculate the curve for this segment into Q
+		for (int k = 1; k < 4; k++) {
+			for (int l = 0; l < (4 - k); l++) {
+					// For each loop set Q's point at this index of the segment to the correct value based on the set ones we coped from the bezier array
+					Q[4 * i + l].XYZW[0] = (1.0f - (u / 15.0f)) * (Q[4 * i + l].XYZW[0]) + (u / 15.0f)*(Q[4 * i + l + 1].XYZW[0]);	  // X
+					Q[4 * i + l].XYZW[1] = (1.0f - (u / 15.0f)) * (Q[4 * i + l].XYZW[1]) + (u / 15.0f)*(Q[4 * i + l + 1].XYZW[1]);	  // Y
+					Q[4 * i + l].XYZW[2] = 0.0f;	// Z
+					Q[4 * i + l].XYZW[3] = 1.0f;	// W
+					Q[4 * i + l].SetColor(cRomCurveColor);	// Color
+
+			}
+		}
+		
+		// Copy over Q Array points to Decastle VAO
+		for (int k = 0; k < 4; k++) {
+			decastlePtr[(15 * i) + u].XYZW[k] = Q[4 * i].XYZW[k];
+			decastlePtr[(15 * i) + u].SetColor(cRomCurveColor);
+		}
+		
+	}
 
 	}
 }
@@ -1008,31 +1028,13 @@ void calculateCRomPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 
 }
 
-void calculateDecastlejauPoints(const Vertex p1, const Vertex p2, int currIndex) {
-	
-	// Our value of t, which moves 1/15 of the way across the curve each time
-	float t = (1/0.15)/100;
-	// Set our t value into a changeable copy
-	float u = t;
-	
-	// For each of the 15 points along the curve p1 to p2 for this segment (determined by currIndex of the Verticies), use
-	// Decastle to move forward by t, and then calculate the decastle point x and y values
-	for (int j = 0; j < nDecastlePts; j++, u += t) {
-		decastlePtr[j + (15 * currIndex)].XYZW[0] = (1 - u)*(p1.XYZW[0]) + u*(p2.XYZW[0]);	  // X
-		decastlePtr[j + (15 * currIndex)].XYZW[1] = (1 - u)*(p1.XYZW[1]) + u*(p2.XYZW[1]);	  // Y
-		decastlePtr[j + (15 * currIndex)].XYZW[2] = 0.0f;									 // Z
-		decastlePtr[j + (15 * currIndex)].XYZW[3] = 1.0f;									 // W
-		decastlePtr[j + (15 * currIndex)].SetColor(cRomCurveColor);							// Color
-	}
-}
-
 int main(void)
 {
 	// initialize window
 	int errorCode = initWindow();
 	if (errorCode != 0)
 		return errorCode;
-
+																							 
 	// Setup Subdivision
 	initSubIndexCounts();
 	initIndicies();
