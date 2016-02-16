@@ -93,7 +93,7 @@ void calculateBezSegment(const Vertex, const Vertex, const Vertex, const Vertex,
 
 // Catmull-Rom Functions
 void cRomCurve(void);
-void calculateCRomPoints(const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
+void calculateCRomPoints(const Vertex, const Vertex, const Vertex, const Vertex, Vertex *, Vertex *, Vertex *, Vertex *);
 void calculateDecastlejauPoints(const Vertex, const Vertex, int currIndex);
 
 // GLOBAL VARIABLES
@@ -370,7 +370,6 @@ void drawScene(void)
 					glBindVertexArray(VertexArrayId[5]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[5]);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision5), subdivision5);
-					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[5], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
@@ -379,7 +378,6 @@ void drawScene(void)
 					glBindVertexArray(VertexArrayId[4]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[4]);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision4), subdivision4);
-					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[4], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
@@ -388,7 +386,6 @@ void drawScene(void)
 					glBindVertexArray(VertexArrayId[3]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[3]);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision3), subdivision3);
-					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[3], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
@@ -397,7 +394,6 @@ void drawScene(void)
 					glBindVertexArray(VertexArrayId[2]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[2]);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision2), subdivision2);
-					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[2], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 
@@ -406,7 +402,6 @@ void drawScene(void)
 					glBindVertexArray(VertexArrayId[1]);	// draw Vertices
 					glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[1]);
 					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(subdivision1), subdivision1);
-					//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
 					glDrawElements(GL_POINTS, NumVert[1], GL_UNSIGNED_SHORT, (void*)0);
 					break;
 			}
@@ -417,7 +412,7 @@ void drawScene(void)
 			glBindVertexArray(VertexArrayId[6]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[6]);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(bezier), bezier);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_LINE_LOOP, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[6], GL_UNSIGNED_SHORT, (void*)0);
 			break;
 
@@ -426,13 +421,13 @@ void drawScene(void)
 			glBindVertexArray(VertexArrayId[7]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[7]);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cRom), cRom);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_LINE_LOOP, NumVert[7], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[7], GL_UNSIGNED_SHORT, (void*)0);
 
 			glBindVertexArray(VertexArrayId[8]);	// draw Vertices
 			glBindBuffer(GL_ARRAY_BUFFER, VertexBufferId[8]);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(decastle), decastle);
-			//glDrawElements(GL_LINE_LOOP, NumVert[0], GL_UNSIGNED_SHORT, (void*)0);
+			glDrawElements(GL_LINE_LOOP, NumVert[8], GL_UNSIGNED_SHORT, (void*)0);
 			glDrawElements(GL_POINTS, NumVert[8], GL_UNSIGNED_SHORT, (void*)0);
 
 		}
@@ -904,19 +899,19 @@ void calculateBezSegment(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 
 void cRomCurve() {
 
-	int j;
-	int k;
+	
 
-	for (int i = 0; i < IndexCount; i++) {
+	for (int i = 0, j, k, l; i < IndexCount; i++) {
 		
 		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
+		(j == (IndexCount - 1)) ? (l = 0) : (l = j + 1);
 		(i == 0) ? (k = IndexCount - 1) : (k = i - 1);
 
 #ifdef DEBUG
 			printf("Setting anchor points of i: %d, j: %d, k: %d\n", i, j, k);
 #endif
 
-			calculateCRomPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], &cRomPtr[(4 * i)], &cRomPtr[(4 * i) + 1], &cRomPtr[(4 * i) + 2], &cRomPtr[(4 * i) + 3]);
+			calculateCRomPoints(verticiesPtr[i], verticiesPtr[j], verticiesPtr[k], verticiesPtr[l], &cRomPtr[(4 * i)], &cRomPtr[(4 * i) + 1], &cRomPtr[(4 * i) + 2], &cRomPtr[(4 * i) + 3]);
 
 #ifdef DEBUG
 			printf("cRom c1 and c2 set to %f,%f and %f,%f\n", cRomPtr[(4 * i) + 1].XYZW[0], cRomPtr[(4 * i) + 1].XYZW[1], bezier[(4 * i) + 2].XYZW[0], cRomPtr[(4 * i) + 2].XYZW[1]);
@@ -927,7 +922,7 @@ void cRomCurve() {
 
 	}
 
-for (int i = 0; i < IndexCount; i++) {
+for (int i = 0, j; i < IndexCount; i++) {
 
 		(i == (IndexCount - 1)) ? (j = 0) : (j = i + 1);
 
@@ -942,7 +937,7 @@ for (int i = 0; i < IndexCount; i++) {
 	}
 }
 
-void calculateCRomPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, Vertex* c0, Vertex* c1, Vertex* c2, Vertex* c3) {
+void calculateCRomPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMinus1, const Vertex pPlus2, Vertex* c0, Vertex* c1, Vertex* c2, Vertex* c3) {
 
 	// Values for the coords & keeping position
 
@@ -958,25 +953,30 @@ void calculateCRomPoints(const Vertex p1, const Vertex pPlus1, const Vertex pMin
 	float x3; // X Coord For The c3 Vertex
 	float y3; // Y Coord For The c3 Vertex
 
-	float xTangent = pPlus1.XYZW[0] - pMinus1.XYZW[0]; // X tangent
-	float yTangent = pPlus1.XYZW[1] - pMinus1.XYZW[1]; // Y tangent
+	float p1xTangent = pPlus1.XYZW[0] - pMinus1.XYZW[0]; // X tangent
+	float p1yTangent = pPlus1.XYZW[1] - pMinus1.XYZW[1]; // Y tangent
+
+	float p2xTangent = pPlus2.XYZW[0] - p1.XYZW[0]; // X tangent
+	float p2yTangent = pPlus2.XYZW[1] - p1.XYZW[1]; // Y tangent
+
+
 	float tWeight = 0.2; // t value @ position for pt (affects where the cRomPoints are displayed, tried to get it close to the website's)
 
 	// Calculate c0
 	x0 = p1.XYZW[0];
 	y0 = p1.XYZW[1];
 
-	// Calculate c1
-	x1 = x0 - tWeight*xTangent;
-	y1 = y0 - tWeight*yTangent;
-
-	// Calculate c2
-	x2 = x0 + tWeight*xTangent;
-	y2 = y0 + tWeight*yTangent;
-
 	// Calculate c3
 	x3 = pPlus1.XYZW[0];
 	y3 = pPlus1.XYZW[1];
+
+	// Calculate c1
+	x1 = x0 + tWeight*p1xTangent;
+	y1 = y0 + tWeight*p1yTangent;
+
+	// Calculate c2
+	x2 = x3 - tWeight*p2xTangent;
+	y2 = y3 - tWeight*p2yTangent;
 
 	// Set c0
 	c0->XYZW[0] = x0;
